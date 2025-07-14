@@ -1,6 +1,4 @@
-# Step 2: Create the final R function file for your new repository
-cat('
-faasr_tidy_hobo_sticr <- function(input_file, output_file) {
+correct_content <- 'faasr_tidy_hobo_sticr <- function(input_file, output_file) {
   # Load STICr package (will be installed from GitHub by FaaSr)
   library(STICr)
   library(tidyverse)
@@ -19,14 +17,6 @@ faasr_tidy_hobo_sticr <- function(input_file, output_file) {
                    local_file = "input_data.csv")
     faasr_log(paste("Successfully downloaded", input_file, "from Minio"))
     
-    # Check if file was downloaded
-    if (file.exists("input_data.csv")) {
-      file_size <- file.info("input_data.csv")$size
-      faasr_log(paste("Downloaded file size:", file_size, "bytes"))
-    } else {
-      stop("Downloaded file not found locally")
-    }
-    
   }, error = function(e) {
     faasr_log(paste("ERROR downloading file:", e$message))
     stop("Failed to download input file")
@@ -35,10 +25,7 @@ faasr_tidy_hobo_sticr <- function(input_file, output_file) {
   # Use STICr package tidy_hobo_data function
   tryCatch({
     faasr_log("Running STICr::tidy_hobo_data...")
-    
-    # STICr tidy_hobo_data expects infile path and outfile (FALSE for return data)
     tidy_data <- tidy_hobo_data(infile = "input_data.csv", outfile = FALSE)
-    
     faasr_log(paste("STICr processing completed:", nrow(tidy_data), "rows processed"))
     faasr_log(paste("Output columns:", paste(colnames(tidy_data), collapse = ", ")))
     
@@ -66,9 +53,7 @@ faasr_tidy_hobo_sticr <- function(input_file, output_file) {
   
   faasr_log("=== STICr WORKFLOW COMPLETED SUCCESSFULLY ===")
   return("STICr tidy processing completed")
-}
-', file = "faasr_tidy_hobo_sticr_final.R")
+}'
 
-cat("✓ Created faasr_tidy_hobo_sticr_final.R\n")
-cat("✓ Upload this file to: nirali112/sticr-functions repository\n")
-cat("✓ File name on GitHub: faasr_tidy_hobo_sticr.R\n")
+# Save this to a file
+writeLines(correct_content, "faasr_tidy_hobo_sticr_correct.R")
