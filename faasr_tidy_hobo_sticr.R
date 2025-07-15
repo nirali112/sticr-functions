@@ -8,7 +8,7 @@ faasr_tidy_hobo_sticr <- function() {
   cat("✓ Libraries loaded\n")
   
   # Download file (you can change this to either file)
-  file_to_process <- "raw_hobo_data.csv"  # Change to "STIC_GP_KNZ_04SW3_SP_2024.csv" for processed data
+  file_to_process <- "STIC_GP_KNZ_04SW3_SP_2024.csv"  # Change to "STIC_GP_KNZ_04SW3_SP_2024.csv" for processed data
   
   faasr_get_file(remote_folder = "stic-data", 
                  remote_file = file_to_process, 
