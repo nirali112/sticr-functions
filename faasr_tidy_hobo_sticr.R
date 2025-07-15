@@ -1,4 +1,4 @@
-updated_function <- 'faasr_tidy_hobo_sticr <- function(input_file, output_file) {
+faasr_tidy_hobo_sticr <- function(input_file, output_file) {
   # Install packages manually (following neon4cast pattern)
   faasr_log("Installing required packages...")
   
@@ -8,7 +8,7 @@ updated_function <- 'faasr_tidy_hobo_sticr <- function(input_file, output_file) 
     library(remotes)
   }
   
-  # Install STICr from GitHub (professor\'s working solution)
+  # Install STICr from GitHub (professor's working solution)
   if (!require(STICr, quietly = TRUE)) {
     faasr_log("Installing STICr from HEAL-KGS/STICr...")
     remotes::install_github("HEAL-KGS/STICr")
@@ -54,7 +54,4 @@ updated_function <- 'faasr_tidy_hobo_sticr <- function(input_file, output_file) 
   faasr_log(paste("✓ Output uploaded to: stic-processed/tidy/", output_file))
   
   return("STICr tidy processing completed")
-}'
-
-# Save the updated function
-writeLines(updated_function, "faasr_tidy_hobo_sticr_manual.R")
+}
