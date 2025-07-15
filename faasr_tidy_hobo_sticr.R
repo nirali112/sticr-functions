@@ -1,5 +1,5 @@
 faasr_tidy_hobo_sticr <- function() {
-  cat("=== STICR WITH COLUMN MAPPING ===\n")
+  cat("=== PROCESSING ALREADY-TIDIED STIC DATA ===\n")
   
   # Load libraries
   library(STICr)
@@ -13,82 +13,59 @@ faasr_tidy_hobo_sticr <- function() {
                  local_file = "input_data.csv")
   cat("File downloaded\n")
   
-  # Read and examine data
+  # Read and examine the already-processed data
   tryCatch({
-    cat("Step 1: Reading original data...\n")
-    original_data <- read.csv("input_data.csv")
-    cat("Original columns:", paste(colnames(original_data), collapse = ", "), "\n")
+    cat("Reading already-processed STIC data...\n")
+    stic_data <- read.csv("input_data.csv")
     
-    # STICr typically expects columns like: DateTime, Temp, SpCond, etc.
-    # Let's try creating a version with standard HOBO column names
-    cat("Step 2: Creating STICr-compatible column names...\n")
+    cat("Data columns:", paste(colnames(stic_data), collapse = ", "), "\n")
+    cat("Number of rows:", nrow(stic_data), "\n")
+    cat("Date range:", min(stic_data$datetime), "to", max(stic_data$datetime), "\n")
     
-    # Create a copy with renamed columns for STICr
-    sticr_data <- original_data %>%
-      rename(
-        DateTime = datetime,
-        `Temp, °C` = tempC,
-        `SpCond, µS/cm` = condUncal
-        # Add other column mappings as needed
-      )
+    # Check what we have
+    cat("Data summary:\n")
+    cat("- condUncal (uncalibrated conductivity):", range(stic_data$condUncal, na.rm = TRUE), "\n")
+    cat("- tempC (temperature):", range(stic_data$tempC, na.rm = TRUE), "\n")
+    cat("- SpC (specific conductivity):", range(stic_data$SpC, na.rm = TRUE), "\n")
+    cat("- wetdry classification:", table(stic_data$wetdry), "\n")
     
-    cat("New columns:", paste(colnames(sticr_data), collapse = ", "), "\n")
+    # Since data is already processed, we can perform analysis or validation
+    # Step 4: QAQC (optional - data already has QAQC column)
+    cat("QAQC flags present:", paste(unique(stic_data$QAQC), collapse = ", "), "\n")
     
-    # Save the renamed version
-    write.csv(sticr_data, "sticr_input.csv", row.names = FALSE)
-    cat("Created STICr-compatible file\n")
+    # Step 5: Additional processing or validation could go here
+    # For example, we could:
+    # - Filter data by quality rating
+    # - Analyze temporal patterns
+    # - Extract specific time periods
+    # - Calculate summary statistics
     
-    # Now try STICr processing
-    cat("Step 3: Running STICr on renamed data...\n")
+    # Example: Filter for excellent quality data only
+    excellent_data <- stic_data[stic_data$qual_rating == "excellent", ]
+    cat("Excellent quality data rows:", nrow(excellent_data), "\n")
     
-    tidy_data <- tidy_hobo_data(infile = "sticr_input.csv", outfile = FALSE)
+    # Save processed results
+    write.csv(excellent_data, "excellent_quality_stic_data.csv", row.names = FALSE)
+    cat("Saved excellent quality data\n")
     
-    if (!is.null(tidy_data) && nrow(tidy_data) > 0) {
-      cat("✓ STICr SUCCESS with renamed columns!\n")
-      cat("Processed rows:", nrow(tidy_data), "\n")
-      cat("Output columns:", paste(colnames(tidy_data), collapse = ", "), "\n")
-      
-      # Save and upload results
-      write.csv(tidy_data, "tidy_output.csv", row.names = FALSE)
-      faasr_put_file(local_file = "tidy_output.csv",
-                     remote_folder = "stic-processed/tidy",
-                     remote_file = "STIC_GP_KNZ_02M10_LS_2022_sticr_tidy.csv")
-      cat("✓ Results uploaded successfully!\n")
-      
-      return("STICr processing completed successfully")
-      
-    } else {
-      cat("STICr still returned empty/null\n")
-      return("STICr processing failed")
-    }
+    # Upload results
+    faasr_put_file(local_file = "excellent_quality_stic_data.csv",
+                   remote_folder = "stic-processed/filtered",
+                   remote_file = "STIC_GP_KNZ_02M10_LS_2022_excellent_quality.csv")
+    cat("✓ Excellent quality data uploaded\n")
+    
+    # Also upload the full dataset for reference
+    write.csv(stic_data, "full_stic_data.csv", row.names = FALSE)
+    faasr_put_file(local_file = "full_stic_data.csv",
+                   remote_folder = "stic-processed/full",
+                   remote_file = "STIC_GP_KNZ_02M10_LS_2022_full_processed.csv")
+    cat("✓ Full processed data uploaded\n")
     
   }, error = function(e) {
-    cat("Error in STICr processing:", e$message, "\n")
-    
-    # If column mapping fails, let's try the original approach with different STICr functions
-    cat("Trying alternative: using original data directly...\n")
-    
-    tryCatch({
-      # Maybe try a different STICr function or approach
-      cat("Attempting direct processing with original column names...\n")
-      
-      # Sometimes STICr works with the original data if we specify parameters differently
-      result <- tidy_hobo_data(infile = "input_data.csv", outfile = FALSE, convert_utc = FALSE)
-      
-      if (!is.null(result) && nrow(result) > 0) {
-        cat("✓ Original data worked!\n")
-        cat("Rows:", nrow(result), "\n")
-        write.csv(result, "tidy_output.csv", row.names = FALSE)
-        faasr_put_file(local_file = "tidy_output.csv",
-                       remote_folder = "stic-processed/tidy", 
-                       remote_file = "STIC_GP_KNZ_02M10_LS_2022_sticr_tidy.csv")
-        return("STICr processing completed with original data")
-      }
-      
-    }, error = function(e2) {
-      cat("Alternative approach also failed:", e2$message, "\n")
-    })
-    
-    return(paste("STICr processing failed:", e$message))
+    cat("Error processing STIC data:", e$message, "\n")
+    stop(e)
   })
+  
+  cat("🎉 SUCCESS: Already-processed STIC data analyzed and organized!\n")
+  return("STIC data processing completed")
 }
