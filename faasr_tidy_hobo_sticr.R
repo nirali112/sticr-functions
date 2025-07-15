@@ -1,119 +1,93 @@
 faasr_tidy_hobo_sticr <- function() {
-  cat("=== STEP 1: STICR WORKFLOW - TIDYING HOBO DATA ===\n")
+  cat("=== STICR WITH CORRECT HOBO COLUMN NAMES ===\n")
   
   # Load libraries
   library(STICr)
   library(tidyverse)
   library(lubridate)
-  cat("✓ Libraries loaded\n")
+  cat("Libraries loaded\n")
   
   # Download file
   faasr_get_file(remote_folder = "stic-data", 
                  remote_file = "STIC_GP_KNZ_02M10_LS_2022.csv", 
                  local_file = "input_data.csv")
-  cat("✓ File downloaded\n")
+  cat("File downloaded\n")
   
-  # Step 1: Detect data type and apply appropriate tidying
   tryCatch({
-    cat("Step 1: Detecting data type and tidying...\n")
+    cat("Creating HOBO-format data for STICr...\n")
     
-    # Read first few lines to detect data format
-    first_lines <- readLines("input_data.csv", n = 10)
-    cat("First few lines of file:\n")
-    for(i in 1:min(5, length(first_lines))) {
-      cat("Line", i, ":", first_lines[i], "\n")
-    }
+    # Read original data
+    original_data <- read.csv("input_data.csv")
     
-    # Check if this is raw HOBO data or already processed
-    is_raw_hobo <- any(grepl("Plot Title|LGR S/N|Temp.*°C.*LGR|HOBOware", first_lines[1:5], ignore.case = TRUE))
+    # STICr expects EXACT HOBO logger column names
+    # Based on HOBO U24 Conductivity Logger format:
+    hobo_data <- data.frame(
+      "Date.Time" = original_data$datetime,  # Note: period not space
+      "Temp" = original_data$tempC,
+      "Conductivity" = original_data$condUncal,
+      stringsAsFactors = FALSE
+    )
     
-    if(is_raw_hobo) {
-      cat("→ Detected: RAW HOBO data - applying tidy_hobo_data()\n")
+    cat("HOBO format columns:", paste(colnames(hobo_data), collapse = ", "), "\n")
+    cat("Sample data:\n")
+    print(head(hobo_data, 2))
+    
+    # Save as HOBO format
+    write.csv(hobo_data, "hobo_format.csv", row.names = FALSE)
+    cat("Created HOBO format file\n")
+    
+    # Try STICr processing
+    cat("Running STICr on HOBO format...\n")
+    tidy_data <- tidy_hobo_data(infile = "hobo_format.csv", outfile = FALSE)
+    
+    if (!is.null(tidy_data) && nrow(tidy_data) > 0) {
+      cat("✓ STICr SUCCESS!\n")
+      cat("Processed rows:", nrow(tidy_data), "\n")
+      cat("Output columns:", paste(colnames(tidy_data), collapse = ", "), "\n")
       
-      # Use STICr's tidy_hobo_data function for raw HOBO files
-      tidy_data <- tidy_hobo_data(infile = "input_data.csv", outfile = FALSE)
+      # Save results
+      write.csv(tidy_data, "tidy_output.csv", row.names = FALSE)
+      cat("Saved processed data\n")
       
-      if(is.null(tidy_data) || nrow(tidy_data) == 0) {
-        stop("tidy_hobo_data() returned empty result")
-      }
+      # Upload to MinIO - make sure folder exists
+      cat("Uploading to MinIO...\n")
+      faasr_put_file(local_file = "tidy_output.csv",
+                     remote_folder = "stic-processed/tidy",
+                     remote_file = "STIC_GP_KNZ_02M10_LS_2022_sticr_tidy.csv")
+      cat("✓ Upload completed!\n")
       
-      cat("✓ Raw HOBO data tidied successfully\n")
-      cat("Tidied columns:", paste(colnames(tidy_data), collapse = ", "), "\n")
-      cat("Tidied rows:", nrow(tidy_data), "\n")
+      return("STICr processing completed successfully")
       
     } else {
-      cat("→ Detected: Already processed STIC data - applying custom tidying\n")
-      
-      # Read the already-processed data
-      raw_data <- read.csv("input_data.csv")
-      
-      # Create tidy format matching STICr's tidy_hobo_data output
-      # STICr's tidy_hobo_data produces: datetime, condUncal, tempC
-      if(all(c("datetime", "condUncal", "tempC") %in% colnames(raw_data))) {
-        # Data already has the right columns
-        tidy_data <- raw_data[, c("datetime", "condUncal", "tempC")]
-      } else {
-        # Try to map columns to STICr format
-        tidy_data <- data.frame(
-          datetime = raw_data$datetime,
-          condUncal = raw_data$condUncal,
-          tempC = raw_data$tempC
-        )
-      }
-      
-      # Convert datetime to proper format if needed
-      if(!inherits(tidy_data$datetime, "POSIXct")) {
-        tidy_data$datetime <- as.POSIXct(tidy_data$datetime, 
-                                        format = "%Y-%m-%dT%H:%M:%S", 
-                                        tz = "UTC")
-      }
-      
-      cat("✓ Already-processed data standardized to STICr format\n")
-      cat("Standardized columns:", paste(colnames(tidy_data), collapse = ", "), "\n")
-      cat("Standardized rows:", nrow(tidy_data), "\n")
+      cat("STICr returned empty result\n")
+      return("STICr processing returned empty result")
     }
-    
-    # Validate the tidied data
-    cat("Validating tidied data...\n")
-    
-    # Check required columns
-    required_cols <- c("datetime", "condUncal", "tempC")
-    missing_cols <- required_cols[!required_cols %in% colnames(tidy_data)]
-    if(length(missing_cols) > 0) {
-      stop(paste("Missing required columns:", paste(missing_cols, collapse = ", ")))
-    }
-    
-    # Check data ranges
-    cat("Data validation:\n")
-    cat("- Date range:", min(tidy_data$datetime, na.rm = TRUE), "to", max(tidy_data$datetime, na.rm = TRUE), "\n")
-    cat("- condUncal range:", min(tidy_data$condUncal, na.rm = TRUE), "to", max(tidy_data$condUncal, na.rm = TRUE), "\n")
-    cat("- tempC range:", min(tidy_data$tempC, na.rm = TRUE), "to", max(tidy_data$tempC, na.rm = TRUE), "\n")
-    cat("- NA values: condUncal =", sum(is.na(tidy_data$condUncal)), 
-        ", tempC =", sum(is.na(tidy_data$tempC)), "\n")
-    
-    # Save Step 1 output
-    write.csv(tidy_data, "step1_tidy_data.csv", row.names = FALSE)
-    cat("✓ Step 1 tidy data saved locally\n")
-    
-    # Upload Step 1 results
-    faasr_put_file(local_file = "step1_tidy_data.csv",
-                   remote_folder = "stic-processed/step1-tidy",
-                   remote_file = "STIC_GP_KNZ_02M10_LS_2022_step1_tidy.csv")
-    cat("✓ Step 1 results uploaded to MinIO\n")
-    
-    # Show sample of tidied data
-    cat("Sample of tidied data:\n")
-    print(head(tidy_data, 3))
     
   }, error = function(e) {
-    cat("✗ Step 1 FAILED:", e$message, "\n")
-    stop(e)
+    cat("Error:", e$message, "\n")
+    
+    # If still failing, let's try minimal HOBO format
+    cat("Trying minimal HOBO format...\n")
+    tryCatch({
+      minimal_data <- data.frame(
+        "Date.Time" = original_data$datetime,
+        "Temp" = original_data$tempC
+      )
+      write.csv(minimal_data, "minimal_hobo.csv", row.names = FALSE)
+      
+      result <- tidy_hobo_data(infile = "minimal_hobo.csv", outfile = FALSE)
+      if (!is.null(result)) {
+        cat("Minimal format worked!\n")
+        write.csv(result, "tidy_output.csv", row.names = FALSE)
+        faasr_put_file(local_file = "tidy_output.csv",
+                       remote_folder = "stic-processed/tidy",
+                       remote_file = "STIC_GP_KNZ_02M10_LS_2022_minimal.csv")
+        return("Minimal STICr processing completed")
+      }
+    }, error = function(e2) {
+      cat("Minimal format also failed:", e2$message, "\n")
+    })
+    
+    return(paste("All STICr attempts failed:", e$message))
   })
-  
-  cat("🎉 Step 1 COMPLETE: Data successfully tidied using STICr workflow!\n")
-  cat("📁 Output: step1_tidy_data.csv (datetime, condUncal, tempC)\n")
-  cat("📤 Uploaded to: stic-processed/step1-tidy/\n")
-  cat("🔜 Ready for Step 2: Calibration\n")
-  
-  return("Step 1: Tidying completed successfully")
 }
