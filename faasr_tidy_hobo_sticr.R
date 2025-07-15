@@ -1,72 +1,72 @@
-faasr_tidy_hobo_sticr <- function() {
-  faasr_log("=== STEP 4: STICR PROCESSING (FIXED) ===")
+faasr_tidy_hobo_sticr <- function(input_file, output_file) {
+  faasr_log("=== STICR PROCESSING STARTED ===")
   
-  # Step 1: Load libraries
+  # Step 1: Load required packages
   tryCatch({
-    faasr_log("Step 1: Loading libraries...")
+    faasr_log("Loading required libraries...")
     library(STICr)
     library(tidyverse)
     library(lubridate)
-    faasr_log("✓ Step 1: Libraries loaded")
+    faasr_log("✓ Libraries loaded successfully")
   }, error = function(e) {
-    faasr_log(paste("✗ Step 1 FAILED:", e$message))
-    stop(e)
+    faasr_log(paste("Error loading libraries:", e$message))
+    stop("Library load failed")
   })
   
-  # Step 2: Download file
+  # Step 2: Download input file from MinIO
   tryCatch({
-    faasr_log("Step 2: Downloading file...")
+    faasr_log(paste("Downloading input file:", input_file))
     faasr_get_file(remote_folder = "stic-data", 
-                   remote_file = "STIC_GP_KNZ_02M10_LS_2022.csv", 
+                   remote_file = input_file, 
                    local_file = "input_data.csv")
-    faasr_log("✓ Step 2: File downloaded")
+    faasr_log("✓ Input file downloaded successfully")
   }, error = function(e) {
-    faasr_log(paste("✗ Step 2 FAILED:", e$message))
-    stop(e)
+    faasr_log(paste("Error downloading input file:", e$message))
+    stop("File download failed")
   })
   
-  # Step 3: Basic file check (memory-safe)
+  # Step 3: Check input file
   tryCatch({
-    faasr_log("Step 3: Checking file...")
     if (!file.exists("input_data.csv")) {
-      stop("File does not exist")
+      stop("Input file not found after download")
     }
     file_info <- file.info("input_data.csv")
-    faasr_log(paste("File size:", file_info$size, "bytes"))
-    faasr_log("✓ Step 3: File verified")
+    faasr_log(paste("Input file size:", file_info$size, "bytes"))
   }, error = function(e) {
-    faasr_log(paste("✗ Step 3 FAILED:", e$message))
-    stop(e)
+    faasr_log(paste("Error verifying input file:", e$message))
+    stop("Input file check failed")
   })
   
-  # Step 4: STICr processing
+  # Step 4: Run STICr processing
   tryCatch({
-    faasr_log("Step 4: Running STICr...")
+    faasr_log("Running STICr tidy_hobo_data function...")
     tidy_data <- tidy_hobo_data(infile = "input_data.csv", outfile = FALSE)
     
     if (is.null(tidy_data) || nrow(tidy_data) == 0) {
-      stop("STICr returned empty result")
+      stop("tidy_hobo_data returned empty data")
     }
     
-    faasr_log(paste("✓ Step 4: STICr success -", nrow(tidy_data), "rows"))
+    faasr_log(paste("STICr processing complete. Rows:", nrow(tidy_data)))
   }, error = function(e) {
-    faasr_log(paste("✗ Step 4 FAILED:", e$message))
-    stop(e)
+    faasr_log(paste("Error in STICr processing:", e$message))
+    stop("STICr processing failed")
   })
   
-  # Step 5: Save and upload
+  # Step 5: Save output and upload back to MinIO
   tryCatch({
-    faasr_log("Step 5: Uploading results...")
+    faasr_log(paste("Saving output file:", output_file))
     write.csv(tidy_data, "tidy_output.csv", row.names = FALSE)
+    
     faasr_put_file(local_file = "tidy_output.csv",
                    remote_folder = "stic-processed/tidy",
-                   remote_file = "STIC_GP_KNZ_02M10_LS_2022_sticr_tidy.csv")
-    faasr_log("✓ Step 5: Upload complete")
+                   remote_file = output_file)
+    
+    faasr_log("✓ Output file uploaded successfully")
   }, error = function(e) {
-    faasr_log(paste("✗ Step 5 FAILED:", e$message))
-    stop(e)
+    faasr_log(paste("Error saving or uploading output file:", e$message))
+    stop("Output file upload failed")
   })
   
-  faasr_log("🎉 SUCCESS: STICr workflow complete!")
-  return("STICr processing completed")
+  faasr_log("=== STICR PROCESSING COMPLETED SUCCESSFULLY ===")
+  return("STICr function execution completed")
 }
