@@ -5,54 +5,37 @@ faasr_tidy_hobo_sticr <- function() {
   library(lubridate)
   cat("Libraries loaded\n")
 
-  # HydroShare STIC dataset discovery - based on actual South Fork Kings Creek data
-  cat("Discovering STIC files from HydroShare dataset...\n")
+  # Fast STIC file discovery - minimal patterns for speed
+  cat("Quick STIC file discovery...\n")
   
-  # Based on the HydroShare resource: South Fork Kings Creek STIC data
-  # Focus on the actual naming patterns from that dataset
+  # Super focused patterns - only what you actually need
   potential_files <- c()
   
-  # 1. South Fork Kings Creek STIC patterns (from HydroShare)
-  # Sites observed in the dataset: 02M10, 04SW3, 20M01, 04W03, 04W04, etc.
-  stic_sites <- c(
-    "02M10", "04SW3", "20M01", "04W03", "04W04", "01M05", "03SW2", 
-    "05M15", "06W01", "07M20", "08SW1", "09W02", "10M01", "11SW4",
-    "12M10", "13W03", "14SW2", "15M05", "16W04", "17M15", "18SW1", "19W05", "20SW3"
-  )
-  
-  stic_types <- c("LS", "HS", "SP")
-  stic_years <- c("2021", "2022", "2023", "2024")  # Years from the dataset
-  
-  # Generate STIC_GP_KNZ patterns
-  for(site in stic_sites) {
-    for(type in stic_types) {
-      for(year in stic_years) {
-        potential_files <- c(potential_files,
-                            paste0("STIC_GP_KNZ_", site, "_", type, "_", year, ".csv"))
+  # 1. Your exact STIC pattern: STIC_GP_KNZ_[site]_[type]_[year].csv
+  # Focus on realistic site numbers (01-20) and common combinations
+  for(site_num in sprintf("%02d", 1:20)) {  # Just 01-20 instead of 30
+    for(site_type in c("M01", "M05", "M10", "M15", "M20", "SW1", "SW2", "SW3", "W01", "W02", "W03", "W04", "W05")) {  # Reduced list
+      for(suffix in c("LS", "HS", "SP")) {
+        for(year in c("2022", "2023", "2024", "2025")) {  # Just recent years
+          potential_files <- c(potential_files,
+                              paste0("STIC_GP_KNZ_", site_num, site_type, "_", suffix, "_", year, ".csv"))
+        }
       }
     }
   }
   
-  # 2. HydroShare raw data files
-  hydroshare_files <- c(
+  # 2. Common files (minimal list)
+  common_files <- c(
     "raw_hobo_data.csv",
-    "stic_data.csv",
-    "STIC_data.csv", 
-    "south_fork_kings_creek.csv",
-    "konza_prairie_stic.csv"
-  )
-  potential_files <- c(potential_files, hydroshare_files)
-  
-  # 3. Generic data files (for other uploads)
-  generic_files <- c(
-    "data.csv", "raw_data.csv", "export.csv",
+    "stic_data.csv", "STIC_data.csv",
+    "data.csv", "raw_data.csv",
     "file1.csv", "file2.csv", "file3.csv"
   )
-  potential_files <- c(potential_files, generic_files)
+  potential_files <- c(potential_files, common_files)
   
   # Remove duplicates
   potential_files <- unique(potential_files)
-  cat("Checking", length(potential_files), "HydroShare STIC patterns...\n")
+  cat("Checking", length(potential_files), "focused STIC patterns (fast mode)...\n")
     
   # Try to discover available files by downloading
   available_files <- c()
