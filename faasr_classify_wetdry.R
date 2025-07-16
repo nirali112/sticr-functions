@@ -1,5 +1,5 @@
 faasr_classify_wetdry <- function() {
-  # Step 3: STICr Classification Function - Dynamic Version
+  # Step 3: STICr Classification Function
   # Input: step2-calibrated/*.csv (from Step 2)
   # Output: step3-classified/*.csv
   # Uses: STICr::classify_wetdry()
@@ -148,11 +148,11 @@ faasr_classify_wetdry <- function() {
       wet_count <- sum(output_data$wetdry == "wet", na.rm = TRUE)
       dry_count <- sum(output_data$wetdry == "dry", na.rm = TRUE)
       
-      cat("✓ Classified:", clean_filename, "->", nrow(output_data), "rows\n")
-      cat("  Wet:", wet_count, "| Dry:", dry_count, "\n")
+      cat("Classified:", clean_filename, "->", nrow(output_data), "rows\n")
+      cat("Wet:", wet_count, "| Dry:", dry_count, "\n")
       
     }, error = function(e) {
-      cat("✗ Failed:", file_name, "-", e$message, "\n")
+      cat("Failed:", file_name, "-", e$message, "\n")
     })
   }
   
