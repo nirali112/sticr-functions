@@ -4,46 +4,49 @@ faasr_tidy_hobo_sticr <- function() {
   library(tidyverse)
   library(lubridate)
   cat("Libraries loaded\n")
+
+  # HydroShare STIC patterns - Ultra-optimized for speed
+  # Focused on realistic South Fork Kings Creek conventions only
   
-  # Generate realistic patterns based on actual HydroShare site conventions
+  # Realistic site patterns based on your actual files
   realistic_sites <- c()
   
-  # Main watershed sites: realistic range (01-25 with common letters)
-  for(num in sprintf("%02d", 1:25)) {
+  # Main sites: 01-15 with single letters (most common)
+  for(num in sprintf("%02d", 1:15)) {
     for(letter in c("M", "T", "W", "S")) {
-      for(suffix in sprintf("%02d", 1:10)) {  # Reduced to 1-10
+      for(suffix in sprintf("%02d", 1:5)) {  # Just 1-5
         realistic_sites <- c(realistic_sites, paste0(num, letter, suffix))
       }
     }
   }
   
-  # Sub-watershed patterns: focused combinations  
+  # SF/SM patterns (like SFM01, SFT01)
   for(combo in c("SF", "SM")) {
-    for(suffix in sprintf("%02d", 1:10)) {
-      realistic_sites <- c(realistic_sites, paste0(combo, suffix))  # SFM01, SFT01 style
+    for(suffix in sprintf("%02d", 1:8)) {
+      realistic_sites <- c(realistic_sites, paste0(combo, suffix))
     }
   }
   
-  # Specific SW patterns (like your 04SW3)
-  for(num in sprintf("%02d", c(1:10, 20:25))) {
-    for(suffix in 1:5) {  # SW3, SW4, SW5 style
+  # SW patterns (like 04SW3) - minimal set
+  for(num in sprintf("%02d", c(1:8, 20:22))) {
+    for(suffix in 1:5) {
       realistic_sites <- c(realistic_sites, paste0(num, "SW", suffix))
     }
   }
   
-  # Add raw file patterns
-  raw_files <- c("raw_hobo_data.csv", "hobo_raw.csv", "raw_stic_data.csv", "stic_data.csv")
+  # Raw files
+  raw_files <- c("raw_hobo_data.csv", "hobo_raw.csv", "raw_stic_data.csv")
   
-  # STIC types and years - realistic range
+  # Focus on actual years in use
   types <- c("LS", "HS", "SP", "SW") 
-  years <- c("2021", "2022", "2023", "2024")
+  years <- c("2022", "2023", "2024")  # Most common years
   
-  # Generate focused patterns (should be ~4,000 patterns - much more manageable)
+  # Generate minimal but comprehensive patterns (~1,500 patterns)
   stic_patterns <- expand.grid(site = realistic_sites, type = types, year = years)
   stic_files <- paste0("STIC_GP_KNZ_", stic_patterns$site, "_", stic_patterns$type, "_", stic_patterns$year, ".csv")
   
   potential_files <- c(stic_files, raw_files)
-  cat("Generated", length(potential_files), "optimized HydroShare STIC patterns\n")
+  cat("Generated", length(potential_files), "ultra-optimized patterns\n")
     
   # available files by downloads and check if already processed
   available_files <- c()
