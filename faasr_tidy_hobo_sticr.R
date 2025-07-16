@@ -14,7 +14,7 @@ faasr_tidy_hobo_sticr <- function() {
   # Main sites: 01-15 with single letters (most common)
   for(num in sprintf("%02d", 1:15)) {
     for(letter in c("M", "T", "W", "S")) {
-      for(suffix in sprintf("%02d", 1:5)) {  # Just 1-5
+      for(suffix in sprintf("%02d", 1:5)) {
         realistic_sites <- c(realistic_sites, paste0(num, letter, suffix))
       }
     }
@@ -39,7 +39,7 @@ faasr_tidy_hobo_sticr <- function() {
   
   # Focus on actual years in use
   types <- c("LS", "HS", "SP", "SW") 
-  years <- c("2022", "2023", "2024")  # Most common years
+  years <- c("2022", "2023", "2024")
   
   # Generate minimal but comprehensive patterns (~1,500 patterns)
   stic_patterns <- expand.grid(site = realistic_sites, type = types, year = years)
