@@ -85,11 +85,12 @@ faasr_validate_stic <- function() {
           stringsAsFactors = FALSE
         )
         
-        # Apply STICr validation with correct parameters
+        # Apply STICr validation with all required parameters
         validated_data <- STICr::validate_stic_data(
           stic_data = qaqc_data,
           field_observations = field_observations,
-          max_time_diff = 30   # 30 minutes max difference
+          max_time_diff = 30,   # 30 minutes max difference
+          join_cols = NULL      # Required parameter - NULL for default behavior
         )
         
         cat("Validation completed with", nrow(validated_data), "validation points\n")
