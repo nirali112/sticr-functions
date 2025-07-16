@@ -1,5 +1,5 @@
 faasr_final_stic <- function() {
-  # Step 4: Final STIC Output Function
+  # Step 4: Final STIC Output Function - Dynamic Version
   # Input: step3-classified/*.csv (from Step 3)
   # Output: step4-final/*.csv (analysis-ready data)
   
@@ -8,47 +8,95 @@ faasr_final_stic <- function() {
   library(STICr)
   cat("Libraries loaded for Step 4: Final Output\n")
   
-  # Auto-discover Step 3 output files
-  potential_step3_files <- c(
-    "STIC_GP_KNZ_02M10_LS_2022_step3_classified.csv",
-    "STIC_GP_KNZ_04SW3_SP_2024_step3_classified.csv",
-    "raw_hobo_data_step3_classified.csv",
-    "stic_data_step3_classified.csv",
-    "STIC_data_step3_classified.csv"
+  # Generate comprehensive patterns for Step 3 output files
+  # Based on Step 3 outputs that follow: [original_name]_step3_classified.csv
+  sites <- c("02M10", "04SW3", "04W03", "04W04", "20M01", "SFM01", "SFM07", "SFT01")
+  types <- c("LS", "HS", "SP", "SW")
+  years <- c("2021", "2022", "2023", "2024")
+  
+  # Generate STIC step3 output patterns
+  stic_patterns <- expand.grid(site = sites, type = types, year = years)
+  stic_step3_files <- paste0("STIC_GP_KNZ_", stic_patterns$site, "_", stic_patterns$type, "_", stic_patterns$year, "_step3_classified.csv")
+  
+  # Add common raw file step3 output patterns
+  other_step3_files <- c(
+    "raw_hobo_data_step3_classified.csv", 
+    "hobo_raw_step3_classified.csv", 
+    "raw_stic_data_step3_classified.csv", 
+    "stic_data_step3_classified.csv"
   )
   
-  # Find available Step 3 files
+  potential_step3_files <- c(stic_step3_files, other_step3_files)
+  cat("Generated", length(potential_step3_files), "potential Step 3 output patterns\n")
+  
+  # Find available Step 3 files and check if already processed
   available_step3_files <- c()
+  files_to_process <- c()
   
   for(file_name in potential_step3_files) {
     tryCatch({
+      # Test if Step 3 file exists
       faasr_get_file(remote_folder = "sticr-workflow/step3-classified", 
                      remote_file = file_name, 
                      local_file = paste0("test_", file_name))
       
+      # If we get here, Step 3 file exists
       available_step3_files <- c(available_step3_files, file_name)
       cat("Found Step 3 output:", file_name, "\n")
       
+      # Clean up test file
       if(file.exists(paste0("test_", file_name))) {
         file.remove(paste0("test_", file_name))
       }
       
+      # Check if already processed in Step 4
+      clean_filename <- gsub("_step3_classified\\.csv$", "", file_name)
+      step4_filename <- paste0(clean_filename, "_step4_final.csv")
+      
+      # Test if Step 4 output already exists
+      already_processed <- tryCatch({
+        faasr_get_file(remote_folder = "sticr-workflow/step4-final", 
+                       remote_file = step4_filename, 
+                       local_file = paste0("test_step4_", step4_filename))
+        
+        # Clean up test file
+        if(file.exists(paste0("test_step4_", step4_filename))) {
+          file.remove(paste0("test_step4_", step4_filename))
+        }
+        
+        cat("  ↳ Already processed - SKIPPING:", step4_filename, "\n")
+        TRUE  # File exists, already processed
+      }, error = function(e) {
+        cat("  ↳ Not yet processed - WILL PROCESS\n")
+        FALSE  # File doesn't exist, needs processing
+      })
+      
+      # Add to processing queue only if not already processed
+      if(!already_processed) {
+        files_to_process <- c(files_to_process, file_name)
+      }
+      
     }, error = function(e) {
-      # File doesn't exist - skip
+      # Step 3 file doesn't exist - skip silently
     })
   }
   
   if(length(available_step3_files) == 0) {
     cat("No Step 3 files found! Run Step 3 first.\n")
-    return("No Step 3 files found")
+    return("No Step 3 files found - run Step 3 first")
   }
   
-  cat("Processing", length(available_step3_files), "files for final output\n")
+  if(length(files_to_process) == 0) {
+    cat("All Step 3 files already processed! No new files to finalize.\n")
+    return("All files already processed - no new final outputs needed")
+  }
   
-  # Process each Step 3 file
+  cat("Found", length(available_step3_files), "Step 3 files,", length(files_to_process), "need processing\n")
+  
+  # Process only the new/unprocessed files
   processed_files <- 0
   
-  for(file_name in available_step3_files) {
+  for(file_name in files_to_process) {
     tryCatch({
       cat("Processing:", file_name, "\n")
       
@@ -122,9 +170,16 @@ faasr_final_stic <- function() {
   }
   
   cat("=== STICr Workflow Complete ===\n")
-  cat("Final datasets created:", processed_files, "of", length(available_step3_files), "files\n")
+  cat("Processed", processed_files, "new files out of", length(available_step3_files), "total Step 3 files\n")
+  cat("Skipped", length(available_step3_files) - length(files_to_process), "already processed files\n")
   cat("Analysis-ready data saved to: sticr-workflow/step4-final/\n")
-  cat("🎉 STIC data processing pipeline completed successfully!\n")
   
-  return(paste("STICr workflow completed:", processed_files, "analysis-ready datasets created"))
+  if(processed_files > 0) {
+    cat("🎉 STIC data processing pipeline completed successfully!\n")
+  } else {
+    cat("✅ All files were already processed - pipeline up to date!\n")
+  }
+  
+  return(paste("STICr workflow completed:", processed_files, "new analysis-ready datasets created,", 
+               length(available_step3_files) - length(files_to_process), "files skipped (already processed)"))
 }
