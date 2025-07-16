@@ -1,13 +1,12 @@
-faasr_qaqc_stic <- function() {
-  # Step 4: STICr QAQC Function
+faasr_final_stic <- function() {
+  # Step 4: Final STIC Output Function
   # Input: step3-classified/*.csv (from Step 3)
-  # Output: step4-qaqc/*.csv
-  # Uses: STICr::qaqc_stic_data()
+  # Output: step4-final/*.csv (analysis-ready data)
   
   library(tidyverse)
   library(lubridate)
   library(STICr)
-  cat("Libraries loaded for Step 4: QAQC\n")
+  cat("Libraries loaded for Step 4: Final Output\n")
   
   # Auto-discover Step 3 output files
   potential_step3_files <- c(
@@ -44,7 +43,7 @@ faasr_qaqc_stic <- function() {
     return("No Step 3 files found")
   }
   
-  cat("Processing", length(available_step3_files), "files for QAQC\n")
+  cat("Processing", length(available_step3_files), "files for final output\n")
   
   # Process each Step 3 file
   processed_files <- 0
@@ -65,7 +64,7 @@ faasr_qaqc_stic <- function() {
         classified_data$datetime <- as.POSIXct(classified_data$datetime)
       }
       
-      # Apply STICr QAQC with required parameters
+      # Apply optional QAQC before creating final output
       qaqc_data <- STICr::qaqc_stic_data(
         stic_data = classified_data,
         spc_neg_correction = TRUE,
@@ -76,50 +75,56 @@ faasr_qaqc_stic <- function() {
       
       # Ensure QAQC column exists
       if (!"QAQC" %in% colnames(qaqc_data)) {
-        # If QAQC function didn't add column, create empty one
         qaqc_data$QAQC <- ""
-        cat("Note: No QAQC flags generated for", file_name, "\n")
       }
       
-      # Prepare output - keep all previous columns plus QAQC
-      output_data <- qaqc_data %>%
+      cat("QAQC applied to", file_name, "\n")
+      
+      # Create final analysis-ready output with QAQC (STICr standard format)
+      final_data <- qaqc_data %>%
         select(datetime, condUncal, tempC, SpC, wetdry, QAQC) %>%
         arrange(datetime)
       
       # Save output
       clean_filename <- gsub("_step3_classified\\.csv$", "", file_name)
-      output_filename <- paste0("step4_qaqc_", clean_filename, ".csv")
+      output_filename <- paste0("step4_final_", clean_filename, ".csv")
       
-      write.csv(output_data, output_filename, row.names = FALSE)
+      write.csv(final_data, output_filename, row.names = FALSE)
       
       # Upload to MinIO
-      remote_filename <- paste0(clean_filename, "_step4_qaqc.csv")
+      remote_filename <- paste0(clean_filename, "_step4_final.csv")
       faasr_put_file(local_file = output_filename,
-                     remote_folder = "sticr-workflow/step4-qaqc",
+                     remote_folder = "sticr-workflow/step4-final",
                      remote_file = remote_filename)
       
       processed_files <- processed_files + 1
       
-      # Quick summary of QAQC results
-      qaqc_flags <- qaqc_data$QAQC[qaqc_data$QAQC != ""]
-      flag_count <- length(qaqc_flags)
+      # Quick summary statistics
+      wet_count <- sum(final_data$wetdry == "wet", na.rm = TRUE)
+      dry_count <- sum(final_data$wetdry == "dry", na.rm = TRUE)
+      wet_percentage <- round((wet_count / nrow(final_data)) * 100, 1)
       
-      cat("✓ QAQC processed:", clean_filename, "->", nrow(output_data), "rows\n")
-      if(flag_count > 0) {
-        cat("  QAQC flags:", flag_count, "issues found\n")
-        unique_flags <- unique(qaqc_flags)
-        cat("  Flag types:", paste(unique_flags, collapse = ", "), "\n")
-      } else {
-        cat("  No QAQC issues detected\n")
-      }
+      date_range <- paste(
+        format(min(final_data$datetime), "%Y-%m-%d"),
+        "to",
+        format(max(final_data$datetime), "%Y-%m-%d")
+      )
+      
+      cat("✓ Final dataset:", clean_filename, "->", nrow(final_data), "rows\n")
+      cat("  Date range:", date_range, "\n")
+      cat("  Wet:", wet_count, "(", wet_percentage, "%) | Dry:", dry_count, "\n")
+      cat("  SpC range:", round(min(final_data$SpC, na.rm = TRUE), 1), "-", 
+          round(max(final_data$SpC, na.rm = TRUE), 1), "µS/cm\n")
       
     }, error = function(e) {
       cat("✗ Failed:", file_name, "-", e$message, "\n")
     })
   }
   
-  cat("=== Step 4 Complete ===\n")
-  cat("QAQC processed", processed_files, "of", length(available_step3_files), "files\n")
+  cat("=== STICr Workflow Complete ===\n")
+  cat("Final datasets created:", processed_files, "of", length(available_step3_files), "files\n")
+  cat("Analysis-ready data saved to: sticr-workflow/step4-final/\n")
+  cat("🎉 STIC data processing pipeline completed successfully!\n")
   
-  return(paste("Step 4 QAQC completed:", processed_files, "files processed"))
+  return(paste("STICr workflow completed:", processed_files, "analysis-ready datasets created"))
 }
