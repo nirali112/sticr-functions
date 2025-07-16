@@ -1,5 +1,5 @@
 faasr_final_stic <- function() {
-  # Step 4: Final STIC Output Function - Dynamic Version
+  # Step 4: Final STIC Output Function
   # Input: step3-classified/*.csv (from Step 3)
   # Output: step4-final/*.csv (analysis-ready data)
   
@@ -156,14 +156,14 @@ faasr_final_stic <- function() {
         format(max(final_data$datetime), "%Y-%m-%d")
       )
       
-      cat("✓ Final dataset:", clean_filename, "->", nrow(final_data), "rows\n")
-      cat("  Date range:", date_range, "\n")
-      cat("  Wet:", wet_count, "(", wet_percentage, "%) | Dry:", dry_count, "\n")
-      cat("  SpC range:", round(min(final_data$SpC, na.rm = TRUE), 1), "-", 
+      cat(" Final dataset:", clean_filename, "->", nrow(final_data), "rows\n")
+      cat(" Date range:", date_range, "\n")
+      cat(" Wet:", wet_count, "(", wet_percentage, "%) | Dry:", dry_count, "\n")
+      cat(" SpC range:", round(min(final_data$SpC, na.rm = TRUE), 1), "-", 
           round(max(final_data$SpC, na.rm = TRUE), 1), "µS/cm\n")
       
     }, error = function(e) {
-      cat("✗ Failed:", file_name, "-", e$message, "\n")
+      cat("Failed:", file_name, "-", e$message, "\n")
     })
   }
   
@@ -173,9 +173,9 @@ faasr_final_stic <- function() {
   cat("Analysis-ready data saved to: sticr-workflow/step4-final/\n")
   
   if(processed_files > 0) {
-    cat("🎉 STIC data processing pipeline completed successfully!\n")
+    cat("STIC data processing pipeline completed successfully!\n")
   } else {
-    cat("✅ All files were already processed - pipeline up to date!\n")
+    cat("All files were already processed - pipeline up to date!\n")
   }
   
   return(paste("STICr workflow completed:", processed_files, "new analysis-ready datasets created,", 
