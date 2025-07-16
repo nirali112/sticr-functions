@@ -95,7 +95,7 @@ faasr_tidy_hobo_sticr <- function() {
   potential_files <- unique(potential_files)
   
   cat("Generated", length(potential_files), "filename patterns covering virtually any CSV file\n")
-  cat("This will find any reasonably-named CSV file you upload!\n")
+  cat(potential_files, "This will find any reasonably-named CSV file you upload!\n")
     
   # Try to discover available files by downloading
   available_files <- c()
