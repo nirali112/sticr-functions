@@ -90,7 +90,9 @@ faasr_validate_stic <- function() {
           stic_data = qaqc_data,
           field_observations = field_observations,
           max_time_diff = 30,   # 30 minutes max difference
-          join_cols = NULL      # Required parameter - NULL for default behavior
+          join_cols = NULL,     # Required parameter - NULL for default behavior
+          get_SpC = TRUE,       # Required parameter - include SpC validation
+          get_QAQC = TRUE       # Required parameter - include QAQC information
         )
         
         cat("Validation completed with", nrow(validated_data), "validation points\n")
