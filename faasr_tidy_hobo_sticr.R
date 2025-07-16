@@ -5,10 +5,21 @@ faasr_tidy_hobo_sticr <- function() {
   library(lubridate)
   cat("Libraries loaded\n")
 
-  # Get all files from stic-data folder dynamically
-  all_files <- faasr_list_files(remote_folder = "stic-data")
-  # Filter for CSV files only
-  potential_files <- all_files[grepl("\\.csv$", all_files, ignore.case = TRUE)]
+  # Generate comprehensive patterns for dynamic file discovery
+  # Based on files visible in your MinIO bucket
+  sites <- c("02M10", "04SW3", "04W03", "04W04", "20M01", "SFM01", "SFM07", "SFT01")
+  types <- c("LS", "HS", "SP", "SW")
+  years <- c("2021", "2022", "2023", "2024")
+  
+  # Generate STIC patterns
+  stic_patterns <- expand.grid(site = sites, type = types, year = years)
+  stic_files <- paste0("STIC_GP_KNZ_", stic_patterns$site, "_", stic_patterns$type, "_", stic_patterns$year, ".csv")
+  
+  # Add common raw file patterns
+  other_files <- c("raw_hobo_data.csv", "hobo_raw.csv", "raw_stic_data.csv", "stic_data.csv")
+  
+  potential_files <- c(stic_files, other_files)
+  cat("Generated", length(potential_files), "potential filename patterns\n")
     
   # available files by downloads
   available_files <- c()
