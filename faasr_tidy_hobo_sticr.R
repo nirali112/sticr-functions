@@ -4,46 +4,15 @@ faasr_tidy_hobo_sticr <- function() {
   library(tidyverse)
   library(lubridate)
   cat("Libraries loaded\n")
+
+  # Use FaaSr's built-in folder listing - true dynamic discovery!
+  # Get all files in stic-data folder using FaaSr's proper function
+  all_files <- faasr_get_folder_list(faasr_prefix = "stic-data")
+  cat("Found", length(all_files), "files in stic-data folder\n")
   
-  # HydroShare STIC patterns Realistic site patterns based on your actual files
-  realistic_sites <- c()
-  
-  # Main sites: 01-15 with single letters
-  for(num in sprintf("%02d", 1:15)) {
-    for(letter in c("M", "T", "W", "S")) {
-      for(suffix in sprintf("%02d", 1:5)) {
-        realistic_sites <- c(realistic_sites, paste0(num, letter, suffix))
-      }
-    }
-  }
-  
-  # SF/SM patterns (like SFM01, SFT01)
-  for(combo in c("SF", "SM")) {
-    for(suffix in sprintf("%02d", 1:8)) {
-      realistic_sites <- c(realistic_sites, paste0(combo, suffix))
-    }
-  }
-  
-  # SW patterns (like 04SW3) - minimal set
-  for(num in sprintf("%02d", c(1:8, 20:22))) {
-    for(suffix in 1:5) {
-      realistic_sites <- c(realistic_sites, paste0(num, "SW", suffix))
-    }
-  }
-  
-  # Raw files
-  raw_files <- c("raw_hobo_data.csv", "hobo_raw.csv", "raw_stic_data.csv")
-  
-  # Focus on actual years in use
-  types <- c("LS", "HS", "SP", "SW") 
-  years <- c("2021", "2022", "2023", "2024")
-  
-  # Generate minimal but comprehensive patterns
-  stic_patterns <- expand.grid(site = realistic_sites, type = types, year = years)
-  stic_files <- paste0("STIC_GP_KNZ_", stic_patterns$site, "_", stic_patterns$type, "_", stic_patterns$year, ".csv")
-  
-  potential_files <- c(stic_files, raw_files)
-  cat("Generated", length(potential_files), "ultra-optimized patterns\n")
+  # Filter for CSV files only
+  potential_files <- all_files[grepl("\\.csv$", all_files, ignore.case = TRUE)]
+  cat("Filtered to", length(potential_files), "CSV files for processing\n")
     
   # available files by downloads and check if already processed
   available_files <- c()
@@ -51,12 +20,12 @@ faasr_tidy_hobo_sticr <- function() {
   
   for(file_name in potential_files) {
     tryCatch({
-      # Try to download the file, this will fail silently if the file doesn't exist
+      # Try to download the file this will fail silently if file doesn't exist
       faasr_get_file(remote_folder = "stic-data", 
                      remote_file = file_name, 
                      local_file = paste0("test_", file_name))
       
-      # If download succeeded, the file exists
+      # If download succeeded, file exists
       available_files <- c(available_files, file_name)
       cat("Found:", file_name, "\n")
       
@@ -83,6 +52,7 @@ faasr_tidy_hobo_sticr <- function() {
         cat("  ↳ Already processed - SKIPPING:", step1_filename, "\n")
         TRUE  # File exists, already processed
       }, error = function(e) {
+        cat("  ↳ Not yet processed - WILL PROCESS\n")
         FALSE  # File doesn't exist, needs processing
       })
       
@@ -97,11 +67,13 @@ faasr_tidy_hobo_sticr <- function() {
   }
   
   if(length(available_files) == 0) {
+    cat("No STIC files found in bucket!\n")
     cat("Make sure files are uploaded to 'stic-data' folder\n")
     return("No files found to process")
   }
   
   if(length(files_to_process) == 0) {
+    cat("All files already processed! No new files to tidy.\n")
     return("All files already processed - no new tidying needed")
   }
   
@@ -122,7 +94,8 @@ faasr_tidy_hobo_sticr <- function() {
                      local_file = "current_input.csv")
       cat("Downloaded:", file_name, "\n")
       
-      # Auto-detect data type and process
+      # Auto-detect data type and process    
+      # Read first few lines for detection
       first_lines <- readLines("current_input.csv", n = 10)
       
       # Enhanced detection logic
