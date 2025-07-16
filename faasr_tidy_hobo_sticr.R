@@ -4,14 +4,11 @@ faasr_tidy_hobo_sticr <- function() {
   library(tidyverse)
   library(lubridate)
   cat("Libraries loaded\n")
-
-  # HydroShare STIC patterns - Ultra-optimized for speed
-  # Focused on realistic South Fork Kings Creek conventions only
   
-  # Realistic site patterns based on your actual files
+  # HydroShare STIC patterns Realistic site patterns based on your actual files
   realistic_sites <- c()
   
-  # Main sites: 01-15 with single letters (most common)
+  # Main sites: 01-15 with single letters
   for(num in sprintf("%02d", 1:15)) {
     for(letter in c("M", "T", "W", "S")) {
       for(suffix in sprintf("%02d", 1:5)) {
@@ -41,7 +38,7 @@ faasr_tidy_hobo_sticr <- function() {
   types <- c("LS", "HS", "SP", "SW") 
   years <- c("2021", "2022", "2023", "2024")
   
-  # Generate minimal but comprehensive patterns (~1,500 patterns)
+  # Generate minimal but comprehensive patterns
   stic_patterns <- expand.grid(site = realistic_sites, type = types, year = years)
   stic_files <- paste0("STIC_GP_KNZ_", stic_patterns$site, "_", stic_patterns$type, "_", stic_patterns$year, ".csv")
   
@@ -54,12 +51,12 @@ faasr_tidy_hobo_sticr <- function() {
   
   for(file_name in potential_files) {
     tryCatch({
-      # Try to download the file this will fail silently if file doesn't exist
+      # Try to download the file, this will fail silently if the file doesn't exist
       faasr_get_file(remote_folder = "stic-data", 
                      remote_file = file_name, 
                      local_file = paste0("test_", file_name))
       
-      # If download succeeded, file exists
+      # If download succeeded, the file exists
       available_files <- c(available_files, file_name)
       cat("Found:", file_name, "\n")
       
@@ -86,7 +83,6 @@ faasr_tidy_hobo_sticr <- function() {
         cat("  ↳ Already processed - SKIPPING:", step1_filename, "\n")
         TRUE  # File exists, already processed
       }, error = function(e) {
-        cat("  ↳ Not yet processed - WILL PROCESS\n")
         FALSE  # File doesn't exist, needs processing
       })
       
@@ -101,13 +97,11 @@ faasr_tidy_hobo_sticr <- function() {
   }
   
   if(length(available_files) == 0) {
-    cat("No STIC files found in bucket!\n")
     cat("Make sure files are uploaded to 'stic-data' folder\n")
     return("No files found to process")
   }
   
   if(length(files_to_process) == 0) {
-    cat("All files already processed! No new files to tidy.\n")
     return("All files already processed - no new tidying needed")
   }
   
@@ -128,8 +122,7 @@ faasr_tidy_hobo_sticr <- function() {
                      local_file = "current_input.csv")
       cat("Downloaded:", file_name, "\n")
       
-      # Auto-detect data type and process    
-      # Read first few lines for detection
+      # Auto-detect data type and process
       first_lines <- readLines("current_input.csv", n = 10)
       
       # Enhanced detection logic
