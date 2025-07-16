@@ -1,23 +1,22 @@
 faasr_calibrate_stic <- function() {
-  # Step 2: STICr Calibration Function - Dynamic Version
+  # Step 2: STICr Calibration Function
   # Input: step1-tidy/*.csv (from Step 1)
   # Output: step2-calibrated/*.csv
   
   library(tidyverse)
   library(lubridate)
   library(STICr)
-  cat("Libraries loaded for Step 2: Calibration\n")
+  cat("Libraries loaded \n")
   
   # Step 2: Simple pattern generation based on Step 1 outputs
-  # Only needs to check what Step 1 actually produced
   
   # Generate patterns for Step 1 outputs: [original_name]_step1_tidy.csv
-  # Based on your known file patterns - much more targeted
+  # Based on your known file patterns, much more targeted
   known_bases <- c("02M10", "04W02", "04W03", "04W04", "04T02", "20M01", "SFM01", "SFM07", "SFT01", "04SW3")
   types <- c("LS", "HS", "SP", "SW")
   years <- c("2021", "2022", "2023", "2024")
   
-  # Generate targeted step1 output patterns (~160 patterns - very fast!)
+  # Generate targeted step1 output patterns
   step1_patterns <- expand.grid(base = known_bases, type = types, year = years)
   stic_step1_files <- paste0("STIC_GP_KNZ_", step1_patterns$base, "_", step1_patterns$type, "_", step1_patterns$year, "_step1_tidy.csv")
   
@@ -148,7 +147,7 @@ faasr_calibrate_stic <- function() {
       cat("✓ Calibrated:", clean_filename, "->", nrow(output_data), "rows\n")
       
     }, error = function(e) {
-      cat("✗ Failed:", file_name, "-", e$message, "\n")
+      cat("Failed:", file_name, "-", e$message, "\n")
     })
   }
   
