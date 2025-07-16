@@ -39,7 +39,7 @@ faasr_tidy_hobo_sticr <- function() {
   
   # Focus on actual years in use
   types <- c("LS", "HS", "SP", "SW") 
-  years <- c("2022", "2023", "2024")
+  years <- c("2021", "2022", "2023", "2024")
   
   # Generate minimal but comprehensive patterns (~1,500 patterns)
   stic_patterns <- expand.grid(site = realistic_sites, type = types, year = years)
