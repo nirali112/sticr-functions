@@ -21,8 +21,9 @@ faasr_tidy_hobo_sticr <- function() {
   potential_files <- c(stic_files, other_files)
   cat("Generated", length(potential_files), "potential filename patterns\n")
     
-  # available files by downloads
+  # available files by downloads and check if already processed
   available_files <- c()
+  files_to_process <- c()
   
   for(file_name in potential_files) {
     tryCatch({
@@ -40,6 +41,33 @@ faasr_tidy_hobo_sticr <- function() {
         file.remove(paste0("test_", file_name))
       }
       
+      # Check if already processed in Step 1
+      clean_filename <- gsub("\\.csv$", "", file_name)
+      step1_filename <- paste0(clean_filename, "_step1_tidy.csv")
+      
+      # Test if Step 1 output already exists
+      already_processed <- tryCatch({
+        faasr_get_file(remote_folder = "sticr-workflow/step1-tidy", 
+                       remote_file = step1_filename, 
+                       local_file = paste0("test_step1_", step1_filename))
+        
+        # Clean up test file
+        if(file.exists(paste0("test_step1_", step1_filename))) {
+          file.remove(paste0("test_step1_", step1_filename))
+        }
+        
+        cat("  ↳ Already processed - SKIPPING:", step1_filename, "\n")
+        TRUE  # File exists, already processed
+      }, error = function(e) {
+        cat("  ↳ Not yet processed - WILL PROCESS\n")
+        FALSE  # File doesn't exist, needs processing
+      })
+      
+      # Add to processing queue only if not already processed
+      if(!already_processed) {
+        files_to_process <- c(files_to_process, file_name)
+      }
+      
     }, error = function(e) {
       # File doesn't exist - skip
     })
@@ -50,15 +78,22 @@ faasr_tidy_hobo_sticr <- function() {
     cat("Make sure files are uploaded to 'stic-data' folder\n")
     return("No files found to process")
   }
-  for(file in available_files) {
+  
+  if(length(files_to_process) == 0) {
+    cat("All files already processed! No new files to tidy.\n")
+    return("All files already processed - no new tidying needed")
+  }
+  
+  cat("Found", length(available_files), "raw files,", length(files_to_process), "need processing\n")
+  for(file in files_to_process) {
     cat("-", file, "\n")
   }
   
-  # Process each discovered file
+  # Process only the new/unprocessed files
   processed_files <- 0
   processing_results <- list()
   
-  for(file_name in available_files) {
+  for(file_name in files_to_process) {
     tryCatch({
       # Download the file
       faasr_get_file(remote_folder = "stic-data", 
@@ -173,5 +208,6 @@ faasr_tidy_hobo_sticr <- function() {
       )
     })
   }
-  return(paste("Automatic processing completed:", processed_files, "of", length(available_files), "files processed successfully"))
+  return(paste("Step 1 tidying completed:", processed_files, "new files processed,", 
+               length(available_files) - length(files_to_process), "files skipped (already processed)"))
 }
