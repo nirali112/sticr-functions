@@ -7,63 +7,51 @@ faasr_tidy_hobo_sticr <- function() {
 
   # Use FaaSr's built-in folder listing - true dynamic discovery!
   # Get all files in stic-data folder using FaaSr's proper function
-  all_files <- faasr_get_folder_list(faasr_prefix = "stic-data")
-  cat("Found", length(all_files), "files in stic-data folder\n")
+  folder_contents <- faasr_get_folder_list(faasr_prefix = "stic-data")
+  cat("Found", length(folder_contents), "objects in stic-data folder\n")
   
-  # Filter for CSV files only
+  # Convert list to character vector and filter for CSV files
+  all_files <- unlist(folder_contents)
   potential_files <- all_files[grepl("\\.csv$", all_files, ignore.case = TRUE)]
   cat("Filtered to", length(potential_files), "CSV files for processing\n")
+  
+  # Remove the folder prefix from filenames for processing
+  potential_files <- gsub("^stic-data/", "", potential_files)
+  cat("Processing files:", paste(potential_files, collapse = ", "), "\n")
     
-  # available files by downloads and check if already processed
-  available_files <- c()
+  # Process discovered files and check if already processed
+  available_files <- potential_files  # We already have the real files from folder listing
   files_to_process <- c()
   
-  for(file_name in potential_files) {
-    tryCatch({
-      # Try to download the file this will fail silently if file doesn't exist
-      faasr_get_file(remote_folder = "stic-data", 
-                     remote_file = file_name, 
-                     local_file = paste0("test_", file_name))
-      
-      # If download succeeded, file exists
-      available_files <- c(available_files, file_name)
-      cat("Found:", file_name, "\n")
+  for(file_name in available_files) {
+    cat("Found:", file_name, "\n")
+    
+    # Check if already processed in Step 1
+    clean_filename <- gsub("\\.csv$", "", file_name)
+    step1_filename <- paste0(clean_filename, "_step1_tidy.csv")
+    
+    # Test if Step 1 output already exists
+    already_processed <- tryCatch({
+      faasr_get_file(remote_folder = "sticr-workflow/step1-tidy", 
+                     remote_file = step1_filename, 
+                     local_file = paste0("test_step1_", step1_filename))
       
       # Clean up test file
-      if(file.exists(paste0("test_", file_name))) {
-        file.remove(paste0("test_", file_name))
+      if(file.exists(paste0("test_step1_", step1_filename))) {
+        file.remove(paste0("test_step1_", step1_filename))
       }
       
-      # Check if already processed in Step 1
-      clean_filename <- gsub("\\.csv$", "", file_name)
-      step1_filename <- paste0(clean_filename, "_step1_tidy.csv")
-      
-      # Test if Step 1 output already exists
-      already_processed <- tryCatch({
-        faasr_get_file(remote_folder = "sticr-workflow/step1-tidy", 
-                       remote_file = step1_filename, 
-                       local_file = paste0("test_step1_", step1_filename))
-        
-        # Clean up test file
-        if(file.exists(paste0("test_step1_", step1_filename))) {
-          file.remove(paste0("test_step1_", step1_filename))
-        }
-        
-        cat("  ↳ Already processed - SKIPPING:", step1_filename, "\n")
-        TRUE  # File exists, already processed
-      }, error = function(e) {
-        cat("  ↳ Not yet processed - WILL PROCESS\n")
-        FALSE  # File doesn't exist, needs processing
-      })
-      
-      # Add to processing queue only if not already processed
-      if(!already_processed) {
-        files_to_process <- c(files_to_process, file_name)
-      }
-      
+      cat("  ↳ Already processed - SKIPPING:", step1_filename, "\n")
+      TRUE  # File exists, already processed
     }, error = function(e) {
-      # File doesn't exist - skip
+      cat("  ↳ Not yet processed - WILL PROCESS\n")
+      FALSE  # File doesn't exist, needs processing
     })
+    
+    # Add to processing queue only if not already processed
+    if(!already_processed) {
+      files_to_process <- c(files_to_process, file_name)
+    }
   }
   
   if(length(available_files) == 0) {
