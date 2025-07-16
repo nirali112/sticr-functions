@@ -9,26 +9,24 @@ faasr_classify_wetdry <- function() {
   library(STICr)
   cat("Libraries loaded for Step 3: Classification\n")
   
-  # Generate comprehensive patterns for Step 2 output files
-  # Based on Step 2 outputs that follow: [original_name]_step2_calibrated.csv
-  sites <- c("02M10", "04SW3", "04W03", "04W04", "20M01", "SFM01", "SFM07", "SFT01")
+  # Step 3: Simple pattern generation based on Step 2 outputs
+  # Only needs to check what Step 2 actually produced
+  
+  # Generate patterns for Step 2 outputs: [original_name]_step2_calibrated.csv
+  # Based on your known file patterns - much more targeted
+  known_bases <- c("02M10", "04W02", "04W03", "04W04", "04T02", "20M01", "SFM01", "SFM07", "SFT01", "04SW3")
   types <- c("LS", "HS", "SP", "SW")
   years <- c("2021", "2022", "2023", "2024")
   
-  # Generate STIC step2 output patterns
-  stic_patterns <- expand.grid(site = sites, type = types, year = years)
-  stic_step2_files <- paste0("STIC_GP_KNZ_", stic_patterns$site, "_", stic_patterns$type, "_", stic_patterns$year, "_step2_calibrated.csv")
+  # Generate targeted step2 output patterns (~160 patterns - very fast!)
+  step2_patterns <- expand.grid(base = known_bases, type = types, year = years)
+  stic_step2_files <- paste0("STIC_GP_KNZ_", step2_patterns$base, "_", step2_patterns$type, "_", step2_patterns$year, "_step2_calibrated.csv")
   
-  # Add common raw file step2 output patterns
-  other_step2_files <- c(
-    "raw_hobo_data_step2_calibrated.csv", 
-    "hobo_raw_step2_calibrated.csv", 
-    "raw_stic_data_step2_calibrated.csv", 
-    "stic_data_step2_calibrated.csv"
-  )
+  # Add raw file step2 outputs
+  raw_step2_files <- c("raw_hobo_data_step2_calibrated.csv", "hobo_raw_step2_calibrated.csv", "raw_stic_data_step2_calibrated.csv")
   
-  potential_step2_files <- c(stic_step2_files, other_step2_files)
-  cat("Generated", length(potential_step2_files), "potential Step 2 output patterns\n")
+  potential_step2_files <- c(stic_step2_files, raw_step2_files)
+  cat("Generated", length(potential_step2_files), "targeted Step 2 output patterns\n")
   
   # Find available Step 2 files and check if already processed
   available_step2_files <- c()
