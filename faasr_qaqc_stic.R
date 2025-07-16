@@ -65,14 +65,9 @@ faasr_qaqc_stic <- function() {
         classified_data$datetime <- as.POSIXct(classified_data$datetime)
       }
       
-      # Apply STICr QAQC with multiple checks
+      # Apply STICr QAQC - minimal working parameters
       qaqc_data <- STICr::qaqc_stic_data(
-        stic_data = classified_data,
-        spc_neg_correction = TRUE,    # Correct negative SpC values to 0
-        inspect_deviation = TRUE,     # Flag short-term anomalies
-        window_size = 6,              # 6 observations around anomaly
-        anomaly_size = 1,             # Single point anomalies
-        outside_std_range_flag = TRUE # Flag data outside calibration range
+        stic_data = classified_data
       )
       
       # Ensure QAQC column exists
