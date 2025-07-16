@@ -8,26 +8,24 @@ faasr_calibrate_stic <- function() {
   library(STICr)
   cat("Libraries loaded for Step 2: Calibration\n")
   
-  # Generate comprehensive patterns for Step 1 output files
-  # Based on Step 1 outputs that follow: [original_name]_step1_tidy.csv
-  sites <- c("02M10", "04SW3", "04W03", "04W04", "20M01", "SFM01", "SFM07", "SFT01")
+  # Step 2: Simple pattern generation based on Step 1 outputs
+  # Only needs to check what Step 1 actually produced
+  
+  # Generate patterns for Step 1 outputs: [original_name]_step1_tidy.csv
+  # Based on your known file patterns - much more targeted
+  known_bases <- c("02M10", "04W02", "04W03", "04W04", "04T02", "20M01", "SFM01", "SFM07", "SFT01", "04SW3")
   types <- c("LS", "HS", "SP", "SW")
   years <- c("2021", "2022", "2023", "2024")
   
-  # Generate STIC step1 output patterns
-  stic_patterns <- expand.grid(site = sites, type = types, year = years)
-  stic_step1_files <- paste0("STIC_GP_KNZ_", stic_patterns$site, "_", stic_patterns$type, "_", stic_patterns$year, "_step1_tidy.csv")
+  # Generate targeted step1 output patterns (~160 patterns - very fast!)
+  step1_patterns <- expand.grid(base = known_bases, type = types, year = years)
+  stic_step1_files <- paste0("STIC_GP_KNZ_", step1_patterns$base, "_", step1_patterns$type, "_", step1_patterns$year, "_step1_tidy.csv")
   
-  # Add common raw file step1 output patterns
-  other_step1_files <- c(
-    "raw_hobo_data_step1_tidy.csv", 
-    "hobo_raw_step1_tidy.csv", 
-    "raw_stic_data_step1_tidy.csv", 
-    "stic_data_step1_tidy.csv"
-  )
+  # Add raw file step1 outputs
+  raw_step1_files <- c("raw_hobo_data_step1_tidy.csv", "hobo_raw_step1_tidy.csv", "raw_stic_data_step1_tidy.csv")
   
-  potential_step1_files <- c(stic_step1_files, other_step1_files)
-  cat("Generated", length(potential_step1_files), "potential Step 1 output patterns\n")
+  potential_step1_files <- c(stic_step1_files, raw_step1_files)
+  cat("Generated", length(potential_step1_files), "targeted Step 1 output patterns\n")
   
   # Find available Step 1 files and check if already processed
   available_step1_files <- c()
