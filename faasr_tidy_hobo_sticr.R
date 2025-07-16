@@ -5,21 +5,44 @@ faasr_tidy_hobo_sticr <- function() {
   library(lubridate)
   cat("Libraries loaded\n")
 
-  # Generate comprehensive patterns for dynamic file discovery
-  # Based on files visible in your MinIO bucket
-  sites <- c("02M10", "04SW3", "04W03", "04W04", "20M01", "SFM01", "SFM07", "SFT01")
-  types <- c("LS", "HS", "SP", "SW")
+  # HydroShare South Fork Kings Creek STIC dataset patterns
+  # Based on actual files from: https://www.hydroshare.org/resource/77d68de62d6942ceab6859fc5541fd61/
+  
+  # Generate patterns based on actual South Fork Kings Creek site conventions
+  realistic_sites <- c()
+  
+  # Main watershed sites: 01-30 with common letters
+  for(num in sprintf("%02d", 1:30)) {
+    for(letter in c("M", "T", "W", "S")) {
+      for(suffix in sprintf("%02d", 1:15)) {
+        realistic_sites <- c(realistic_sites, paste0(num, letter, suffix))
+      }
+    }
+  }
+  
+  # Sub-watershed patterns: SW, SF combinations
+  for(num in sprintf("%02d", c(1:10, 20:25))) {
+    for(combo in c("SW", "SF", "SM")) {
+      for(suffix in sprintf("%02d", 1:10)) {
+        realistic_sites <- c(realistic_sites, paste0(combo, suffix))  # SFM01, SFT01 style
+        realistic_sites <- c(realistic_sites, paste0(num, combo, suffix))  # 04SW3 style
+      }
+    }
+  }
+  
+  # Add raw file patterns
+  raw_files <- c("raw_hobo_data.csv", "hobo_raw.csv", "raw_stic_data.csv", "stic_data.csv")
+  
+  # STIC types and years from HydroShare dataset
+  types <- c("LS", "HS", "SP", "SW") 
   years <- c("2021", "2022", "2023", "2024")
   
-  # Generate STIC patterns
-  stic_patterns <- expand.grid(site = sites, type = types, year = years)
+  # Generate HydroShare-realistic patterns
+  stic_patterns <- expand.grid(site = realistic_sites, type = types, year = years)
   stic_files <- paste0("STIC_GP_KNZ_", stic_patterns$site, "_", stic_patterns$type, "_", stic_patterns$year, ".csv")
   
-  # Add common raw file patterns
-  other_files <- c("raw_hobo_data.csv", "hobo_raw.csv", "raw_stic_data.csv", "stic_data.csv")
-  
-  potential_files <- c(stic_files, other_files)
-  cat("Generated", length(potential_files), "potential filename patterns\n")
+  potential_files <- c(stic_files, raw_files)
+  cat("Generated", length(potential_files), "HydroShare STIC patterns\n")
     
   # available files by downloads and check if already processed
   available_files <- c()
