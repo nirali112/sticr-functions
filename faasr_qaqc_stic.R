@@ -65,9 +65,13 @@ faasr_qaqc_stic <- function() {
         classified_data$datetime <- as.POSIXct(classified_data$datetime)
       }
       
-      # Apply STICr QAQC - minimal working parameters
+      # Apply STICr QAQC with required parameters
       qaqc_data <- STICr::qaqc_stic_data(
-        stic_data = classified_data
+        stic_data = classified_data,
+        spc_neg_correction = TRUE,
+        inspect_deviation = TRUE,
+        deviation_size = 1,
+        window_size = 6
       )
       
       # Ensure QAQC column exists
