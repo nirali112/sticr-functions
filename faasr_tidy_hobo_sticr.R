@@ -24,72 +24,72 @@ faasr_tidy_hobo_sticr <- function() {
                         paste0("raw_", base, ".csv"))
   }
   
-  # # 2. Numbered files (file1.csv through file100.csv)
-  # for(i in 1:100) {
-  #   potential_files <- c(potential_files,
-  #                       paste0("file", i, ".csv"),
-  #                       paste0("data", i, ".csv"),
-  #                       paste0("stic", i, ".csv"),
-  #                       paste0("dataset", i, ".csv"))
-  # }
+  # 2. Numbered files (file1.csv through file100.csv)
+  for(i in 1:100) {
+    potential_files <- c(potential_files,
+                        paste0("file", i, ".csv"),
+                        paste0("data", i, ".csv"),
+                        paste0("stic", i, ".csv"),
+                        paste0("dataset", i, ".csv"))
+  }
   
-  # # 3. Date-based patterns (2020-2025, all months)
-  # for(year in 2020:2025) {
-  #   potential_files <- c(potential_files, paste0("data_", year, ".csv"))
-  #   for(month in 1:12) {
-  #     month_str <- sprintf("%02d", month)
-  #     potential_files <- c(potential_files,
-  #                         paste0("data_", year, "_", month_str, ".csv"),
-  #                         paste0(year, "_", month_str, ".csv"),
-  #                         paste0(year, month_str, ".csv"))
-  #   }
-  # }
+  # 3. Date-based patterns (2020-2025, all months)
+  for(year in 2020:2025) {
+    potential_files <- c(potential_files, paste0("data_", year, ".csv"))
+    for(month in 1:12) {
+      month_str <- sprintf("%02d", month)
+      potential_files <- c(potential_files,
+                          paste0("data_", year, "_", month_str, ".csv"),
+                          paste0(year, "_", month_str, ".csv"),
+                          paste0(year, month_str, ".csv"))
+    }
+  }
   
-  # # 4. STIC pattern variations (comprehensive coverage)
-  # # Cover all reasonable site combinations
-  # for(prefix in c("01", "02", "03", "04", "05", "10", "15", "20", "25", "30")) {
-  #   for(middle in c("M01", "M02", "M05", "M10", "M12", "M15", "M20", "SW1", "SW2", "SW3", "SW4", "SW5")) {
-  #     for(suffix in c("LS", "HS", "SP", "MS", "US")) {
-  #       for(year in c("2020", "2021", "2022", "2023", "2024", "2025")) {
-  #         potential_files <- c(potential_files,
-  #                             paste0("STIC_GP_KNZ_", prefix, middle, "_", suffix, "_", year, ".csv"),
-  #                             paste0("stic_gp_knz_", prefix, middle, "_", suffix, "_", year, ".csv"))
-  #       }
-  #     }
-  #   }
-  # }
+  # 4. STIC pattern variations (comprehensive coverage)
+  # Cover all reasonable site combinations
+  for(prefix in c("01", "02", "03", "04", "05", "10", "15", "20", "25", "30")) {
+    for(middle in c("M01", "M02", "M05", "M10", "M12", "M15", "M20", "SW1", "SW2", "SW3", "SW4", "SW5")) {
+      for(suffix in c("LS", "HS", "SP", "MS", "US")) {
+        for(year in c("2020", "2021", "2022", "2023", "2024", "2025")) {
+          potential_files <- c(potential_files,
+                              paste0("STIC_GP_KNZ_", prefix, middle, "_", suffix, "_", year, ".csv"),
+                              paste0("stic_gp_knz_", prefix, middle, "_", suffix, "_", year, ".csv"))
+        }
+      }
+    }
+  }
   
-  # # 5. Alternative STIC formats
-  # for(i in 1:50) {
-  #   site_code <- sprintf("%02d", i)
-  #   for(type in c("LS", "HS", "SP")) {
-  #     for(year in 2020:2025) {
-  #       potential_files <- c(potential_files,
-  #                           paste0("STIC_", site_code, "_", type, "_", year, ".csv"),
-  #                           paste0("stic_", site_code, "_", type, "_", year, ".csv"))
-  #     }
-  #   }
-  # }
+  # 5. Alternative STIC formats
+  for(i in 1:50) {
+    site_code <- sprintf("%02d", i)
+    for(type in c("LS", "HS", "SP")) {
+      for(year in 2020:2025) {
+        potential_files <- c(potential_files,
+                            paste0("STIC_", site_code, "_", type, "_", year, ".csv"),
+                            paste0("stic_", site_code, "_", type, "_", year, ".csv"))
+      }
+    }
+  }
   
-  # # 6. Random letter combinations (a.csv, b.csv, ... aa.csv, ab.csv, etc.)
-  # letters_single <- letters[1:26]
-  # for(l in letters_single) {
-  #   potential_files <- c(potential_files, paste0(l, ".csv"))
-  # }
+  # 6. Random letter combinations (a.csv, b.csv, ... aa.csv, ab.csv, etc.)
+  letters_single <- letters[1:26]
+  for(l in letters_single) {
+    potential_files <- c(potential_files, paste0(l, ".csv"))
+  }
   
-  # # 7. Two-letter combinations (most common)
-  # common_two_letter <- c("aa", "ab", "ac", "ad", "ba", "bb", "bc", "ca", "cb", "da", "db")
-  # for(l in common_two_letter) {
-  #   potential_files <- c(potential_files, paste0(l, ".csv"))
-  # }
+  # 7. Two-letter combinations (most common)
+  common_two_letter <- c("aa", "ab", "ac", "ad", "ba", "bb", "bc", "ca", "cb", "da", "db")
+  for(l in common_two_letter) {
+    potential_files <- c(potential_files, paste0(l, ".csv"))
+  }
   
-  # # 8. Timestamp-like patterns
-  # for(i in 1:31) {
-  #   day_str <- sprintf("%02d", i)
-  #   potential_files <- c(potential_files,
-  #                       paste0("20230", i %% 10 + 1, day_str, ".csv"),
-  #                       paste0("20240", i %% 10 + 1, day_str, ".csv"))
-  # }
+  # 8. Timestamp-like patterns
+  for(i in 1:31) {
+    day_str <- sprintf("%02d", i)
+    potential_files <- c(potential_files,
+                        paste0("20230", i %% 10 + 1, day_str, ".csv"),
+                        paste0("20240", i %% 10 + 1, day_str, ".csv"))
+  }
   
   # Remove duplicates and sort
   potential_files <- unique(potential_files)
