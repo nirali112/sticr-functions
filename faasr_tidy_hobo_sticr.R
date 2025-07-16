@@ -5,44 +5,17 @@ faasr_tidy_hobo_sticr <- function() {
   library(lubridate)
   cat("Libraries loaded\n")
 
-  # Fast STIC file discovery - minimal patterns for speed
-  cat("Quick STIC file discovery...\n")
-  
-  # Super focused patterns - only what you actually need
-  potential_files <- c()
-  
-  # 1. Your exact STIC pattern: STIC_GP_KNZ_[site]_[type]_[year].csv
-  # Focus on realistic site numbers (01-20) and common combinations
-  for(site_num in sprintf("%02d", 1:20)) {  # Just 01-20 instead of 30
-    for(site_type in c("M01", "M05", "M10", "M15", "M20", "SW1", "SW2", "SW3", "W01", "W02", "W03", "W04", "W05")) {  # Reduced list
-      for(suffix in c("LS", "HS", "SP")) {
-        for(year in c("2022", "2023", "2024", "2025")) {  # Just recent years
-          potential_files <- c(potential_files,
-                              paste0("STIC_GP_KNZ_", site_num, site_type, "_", suffix, "_", year, ".csv"))
-        }
-      }
-    }
-  }
-  
-  # 2. Common files (minimal list)
-  common_files <- c(
-    "raw_hobo_data.csv",
-    "stic_data.csv", "STIC_data.csv",
-    "data.csv", "raw_data.csv",
-    "file1.csv", "file2.csv", "file3.csv"
-  )
-  potential_files <- c(potential_files, common_files)
-  
-  # Remove duplicates
-  potential_files <- unique(potential_files)
-  cat("Checking", length(potential_files), "focused STIC patterns (fast mode)...\n")
+  # Get all files from stic-data folder dynamically
+  all_files <- faasr_list_files(remote_folder = "stic-data")
+  # Filter for CSV files only
+  potential_files <- all_files[grepl("\\.csv$", all_files, ignore.case = TRUE)]
     
-  # Try to discover available files by downloading
+  # available files by downloads
   available_files <- c()
   
   for(file_name in potential_files) {
     tryCatch({
-      # Try to download the file - this will fail silently if file doesn't exist
+      # Try to download the file this will fail silently if file doesn't exist
       faasr_get_file(remote_folder = "stic-data", 
                      remote_file = file_name, 
                      local_file = paste0("test_", file_name))
@@ -57,25 +30,18 @@ faasr_tidy_hobo_sticr <- function() {
       }
       
     }, error = function(e) {
-      # File doesn't exist - skip silently
+      # File doesn't exist - skip
     })
   }
   
   if(length(available_files) == 0) {
     cat("No STIC files found in bucket!\n")
     cat("Make sure files are uploaded to 'stic-data' folder\n")
-    cat("Checked patterns including:\n")
-    cat("- STIC_GP_KNZ_*.csv\n")
-    cat("- raw_hobo_data.csv\n") 
-    cat("- stic_data.csv\n")
     return("No files found to process")
   }
-  
-  cat("\n=== Files discovered and ready for processing ===\n")
   for(file in available_files) {
     cat("-", file, "\n")
   }
-  cat("Total files found:", length(available_files), "\n\n")
   
   # Process each discovered file
   processed_files <- 0
@@ -87,7 +53,7 @@ faasr_tidy_hobo_sticr <- function() {
       faasr_get_file(remote_folder = "stic-data", 
                      remote_file = file_name, 
                      local_file = "current_input.csv")
-      cat("Processing:", file_name, "\n")
+      cat("Downloaded:", file_name, "\n")
       
       # Auto-detect data type and process    
       # Read first few lines for detection
@@ -98,18 +64,15 @@ faasr_tidy_hobo_sticr <- function() {
       has_project_column <- any(grepl("project.*datetime.*siteId", first_lines[1:3], ignore.case = TRUE))
       
       if(is_raw_hobo) {
-        cat("→ Raw HOBO format detected - Using STICr::tidy_hobo_data()\n")
-        
-        # Using official STICr function
+        # YES - Using STICr function here
         tidy_data <- tidy_hobo_data(infile = "current_input.csv", outfile = FALSE)
         
         if(is.null(tidy_data) || nrow(tidy_data) == 0) {
           stop("STICr::tidy_hobo_data() returned empty result")
         }
         processing_method <- "official_STICr_tidy_hobo_data"
-        
       } else if(has_project_column) {
-        cat("→ Processed research data detected - Using custom tidying\n")
+        cat("DETECTED: PROCESSED RESEARCH DATA - Using custom tidying\n")
         
         # Read processed data
         original_data <- read.csv("current_input.csv")
@@ -124,10 +87,12 @@ faasr_tidy_hobo_sticr <- function() {
         
         # Remove incomplete cases
         tidy_data <- tidy_data[complete.cases(tidy_data), ]
+        
         processing_method <- "custom_research_data_tidying"
+        cat("Processed with custom tidying\n")
         
       } else {
-        cat("→ Unknown format - Attempting generic processing\n")
+        cat("DETECTED: UNKNOWN FORMAT - Attempting generic processing\n")
         
         # Generic approach with better column detection
         raw_data <- read.csv("current_input.csv")
@@ -153,13 +118,13 @@ faasr_tidy_hobo_sticr <- function() {
         
         tidy_data <- tidy_data[complete.cases(tidy_data), ]
         processing_method <- "generic_auto_detection"
+        cat("Processed with generic auto-detection\n")
       }
       
       # Validate results
       if(nrow(tidy_data) == 0) {
         stop("No valid data after processing")
       }
-      
       # Generate output filename
       clean_filename <- gsub("\\.csv$", "", file_name)
       output_filename <- paste0("step1_tidy_", clean_filename, ".csv")
@@ -181,41 +146,21 @@ faasr_tidy_hobo_sticr <- function() {
         output_file = remote_filename,
         rows_processed = nrow(tidy_data),
         date_range_start = min(tidy_data$datetime),
-        date_range_end = max(tidy_data$datetime)
+        date_range_end = max(tidy_data$datetime),
+        processing_time = Sys.time()
       )
       
       processed_files <- processed_files + 1
-      cat("✓ Success:", clean_filename, "->", nrow(tidy_data), "rows\n\n")
       
     }, error = function(e) {
-      cat("✗ Failed to process", file_name, ":", e$message, "\n\n")
+      cat("FAILED to process", file_name, ":", e$message, "\n")
       
       processing_results[[file_name]] <- list(
         status = "FAILED",
-        error_message = e$message
+        error_message = e$message,
+        processing_time = Sys.time()
       )
     })
   }
-  
-  cat("=== Step 1 Processing Complete ===\n")
-  cat("Successfully processed:", processed_files, "of", length(available_files), "files\n")
-  
-  # Show processing summary
-  successful_files <- sapply(processing_results, function(x) x$status == "SUCCESS")
-  if(any(successful_files)) {
-    cat("\nSuccessful files:\n")
-    for(name in names(processing_results)[successful_files]) {
-      result <- processing_results[[name]]
-      cat("-", name, "->", result$output_file, "(", result$rows_processed, "rows )\n")
-    }
-  }
-  
-  if(any(!successful_files)) {
-    cat("\nFailed files:\n")
-    for(name in names(processing_results)[!successful_files]) {
-      cat("-", name, "\n")
-    }
-  }
-  
-  return(paste("Dynamic processing completed:", processed_files, "of", length(available_files), "files processed successfully"))
+  return(paste("Automatic processing completed:", processed_files, "of", length(available_files), "files processed successfully"))
 }
