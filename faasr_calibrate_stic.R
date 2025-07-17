@@ -1,5 +1,5 @@
 faasr_calibrate_stic <- function() {
-  # Step 2: STICr Calibration Function - Dynamic Version
+  # Step 2: STICr Calibration Function
   # Input: step1-tidy/*.csv (from Step 1)
   # Output: step2-calibrated/*.csv
   
