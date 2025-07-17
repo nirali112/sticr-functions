@@ -7,10 +7,8 @@ faasr_calibrate_stic <- function() {
   library(lubridate)
   library(STICr)
   cat("Libraries loaded for Step 2: Calibration\n")
-  
-  # Use FaaSr's built-in folder listing for Step 1 outputs
+
   folder_contents <- faasr_get_folder_list(faasr_prefix = "sticr-workflow/step1-tidy")
-  cat("Found", length(folder_contents), "objects in step1-tidy folder\n")
   
   # Convert list to character vector and filter for CSV files
   all_step1_files <- unlist(folder_contents)
@@ -56,10 +54,10 @@ faasr_calibrate_stic <- function() {
           file.remove(paste0("test_step2_", step2_filename))
         }
         
-        cat("  ↳ Already processed - SKIPPING:", step2_filename, "\n")
+        cat("Already processed - SKIPPING:", step2_filename, "\n")
         TRUE  # File exists, already processed
       }, error = function(e) {
-        cat("  ↳ Not yet processed - WILL PROCESS\n")
+        cat("Not yet processed - WILL PROCESS\n")
         FALSE  # File doesn't exist, needs processing
       })
       
@@ -139,14 +137,14 @@ faasr_calibrate_stic <- function() {
                      remote_file = remote_filename)
       
       processed_files <- processed_files + 1
-      cat("✓ Calibrated:", clean_filename, "->", nrow(output_data), "rows\n")
+      cat("Calibrated:", clean_filename, "->", nrow(output_data), "rows\n")
       
     }, error = function(e) {
-      cat("✗ Failed:", file_name, "-", e$message, "\n")
+      cat("Failed:", file_name, "-", e$message, "\n")
     })
   }
   
-  cat("=== Step 2 Complete ===\n")
+  cat("Step 2 Complete \n")
   cat("Processed", processed_files, "new files out of", length(available_step1_files), "total Step 1 files\n")
   cat("Skipped", length(available_step1_files) - length(files_to_process), "already processed files\n")
   
