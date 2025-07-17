@@ -1,6 +1,6 @@
 faasr_classify_wetdry <- function() {
-  # Step 3: STICr Classification Function - Dynamic Version
-  # Input: step2-calibrated/*.csv (from Step 2)
+  # Step 3: STICr Classification Function
+  # Input: step2-calibrated/*.csv
   # Output: step3-classified/*.csv
   # Uses: STICr::classify_wetdry()
   
@@ -8,19 +8,15 @@ faasr_classify_wetdry <- function() {
   library(lubridate)
   library(STICr)
   cat("Libraries loaded for Step 3: Classification\n")
-  
-  # Use FaaSr's built-in folder listing for Step 2 outputs
+
   folder_contents <- faasr_get_folder_list(faasr_prefix = "sticr-workflow/step2-calibrated")
-  cat("Found", length(folder_contents), "objects in step2-calibrated folder\n")
   
   # Convert list to character vector and filter for CSV files
   all_step2_files <- unlist(folder_contents)
   potential_step2_files <- all_step2_files[grepl("\\.csv$", all_step2_files, ignore.case = TRUE)]
-  cat("Filtered to", length(potential_step2_files), "Step 2 output files\n")
   
   # Remove the folder prefix from filenames for processing
   potential_step2_files <- gsub("^sticr-workflow/step2-calibrated/", "", potential_step2_files)
-  cat("Processing Step 2 outputs:", paste(potential_step2_files, collapse = ", "), "\n")
   
   # Find available Step 2 files and check if already processed
   available_step2_files <- c()
@@ -57,10 +53,10 @@ faasr_classify_wetdry <- function() {
           file.remove(paste0("test_step3_", step3_filename))
         }
         
-        cat("  ↳ Already processed - SKIPPING:", step3_filename, "\n")
+        cat("Already processed - Skipping:", step3_filename, "\n")
         TRUE  # File exists, already processed
       }, error = function(e) {
-        cat("  ↳ Not yet processed - WILL PROCESS\n")
+        cat(" Not yet processed - will process \n")
         FALSE  # File doesn't exist, needs processing
       })
       
@@ -80,7 +76,6 @@ faasr_classify_wetdry <- function() {
   }
   
   if(length(files_to_process) == 0) {
-    cat("All Step 2 files already processed! No new files to classify.\n")
     return("All files already processed - no new classification needed")
   }
   
@@ -138,19 +133,18 @@ faasr_classify_wetdry <- function() {
       
       processed_files <- processed_files + 1
       
-      # Quick summary of classification results
+      # summary of classification result
       wet_count <- sum(output_data$wetdry == "wet", na.rm = TRUE)
       dry_count <- sum(output_data$wetdry == "dry", na.rm = TRUE)
       
-      cat("✓ Classified:", clean_filename, "->", nrow(output_data), "rows\n")
-      cat("  Wet:", wet_count, "| Dry:", dry_count, "\n")
+      cat("Classified:", clean_filename, "->", nrow(output_data), "rows\n")
+      cat("Wet:", wet_count, "| Dry:", dry_count, "\n")
       
     }, error = function(e) {
-      cat("✗ Failed:", file_name, "-", e$message, "\n")
+      cat("Failed:", file_name, "-", e$message, "\n")
     })
   }
   
-  cat("=== Step 3 Complete ===\n")
   cat("Processed", processed_files, "new files out of", length(available_step2_files), "total Step 2 files\n")
   cat("Skipped", length(available_step2_files) - length(files_to_process), "already processed files\n")
   
