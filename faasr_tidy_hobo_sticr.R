@@ -5,10 +5,7 @@ faasr_tidy_hobo_sticr <- function() {
   library(lubridate)
   cat("Libraries loaded\n")
 
-  # Use FaaSr's built-in folder listing - true dynamic discovery!
-  # Get all files in stic-data folder using FaaSr's proper function
   folder_contents <- faasr_get_folder_list(faasr_prefix = "stic-data")
-  cat("Found", length(folder_contents), "objects in stic-data folder\n")
   
   # Convert list to character vector and filter for CSV files
   all_files <- unlist(folder_contents)
@@ -41,10 +38,10 @@ faasr_tidy_hobo_sticr <- function() {
         file.remove(paste0("test_step1_", step1_filename))
       }
       
-      cat("  ↳ Already processed - SKIPPING:", step1_filename, "\n")
+      cat("Already processed - SKIPPING:", step1_filename, "\n")
       TRUE  # File exists, already processed
     }, error = function(e) {
-      cat("  ↳ Not yet processed - WILL PROCESS\n")
+      cat("Not yet processed - WILL PROCESS\n")
       FALSE  # File doesn't exist, needs processing
     })
     
