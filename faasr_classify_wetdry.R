@@ -1,5 +1,5 @@
 faasr_classify_wetdry <- function() {
-  # Step 3: STICr Classification Function
+  # Step 3: STICr Classification Function - Dynamic Version
   # Input: step2-calibrated/*.csv (from Step 2)
   # Output: step3-classified/*.csv
   # Uses: STICr::classify_wetdry()
@@ -9,24 +9,18 @@ faasr_classify_wetdry <- function() {
   library(STICr)
   cat("Libraries loaded for Step 3: Classification\n")
   
-  # Step 3: Simple pattern generation based on Step 2 outputs
-  # Only needs to check what Step 2 actually produced
+  # Use FaaSr's built-in folder listing for Step 2 outputs
+  folder_contents <- faasr_get_folder_list(faasr_prefix = "sticr-workflow/step2-calibrated")
+  cat("Found", length(folder_contents), "objects in step2-calibrated folder\n")
   
-  # Generate patterns for Step 2 outputs: [original_name]_step2_calibrated.csv
-  # Based on your known file patterns - much more targeted
-  known_bases <- c("02M10", "04W02", "04W03", "04W04", "04T02", "20M01", "SFM01", "SFM07", "SFT01", "04SW3")
-  types <- c("LS", "HS", "SP", "SW")
-  years <- c("2021", "2022", "2023", "2024")
+  # Convert list to character vector and filter for CSV files
+  all_step2_files <- unlist(folder_contents)
+  potential_step2_files <- all_step2_files[grepl("\\.csv$", all_step2_files, ignore.case = TRUE)]
+  cat("Filtered to", length(potential_step2_files), "Step 2 output files\n")
   
-  # Generate targeted step2 output patterns (~160 patterns - very fast!)
-  step2_patterns <- expand.grid(base = known_bases, type = types, year = years)
-  stic_step2_files <- paste0("STIC_GP_KNZ_", step2_patterns$base, "_", step2_patterns$type, "_", step2_patterns$year, "_step2_calibrated.csv")
-  
-  # Add raw file step2 outputs
-  raw_step2_files <- c("raw_hobo_data_step2_calibrated.csv", "hobo_raw_step2_calibrated.csv", "raw_stic_data_step2_calibrated.csv")
-  
-  potential_step2_files <- c(stic_step2_files, raw_step2_files)
-  cat("Generated", length(potential_step2_files), "targeted Step 2 output patterns\n")
+  # Remove the folder prefix from filenames for processing
+  potential_step2_files <- gsub("^sticr-workflow/step2-calibrated/", "", potential_step2_files)
+  cat("Processing Step 2 outputs:", paste(potential_step2_files, collapse = ", "), "\n")
   
   # Find available Step 2 files and check if already processed
   available_step2_files <- c()
@@ -148,11 +142,11 @@ faasr_classify_wetdry <- function() {
       wet_count <- sum(output_data$wetdry == "wet", na.rm = TRUE)
       dry_count <- sum(output_data$wetdry == "dry", na.rm = TRUE)
       
-      cat("Classified:", clean_filename, "->", nrow(output_data), "rows\n")
-      cat("Wet:", wet_count, "| Dry:", dry_count, "\n")
+      cat("✓ Classified:", clean_filename, "->", nrow(output_data), "rows\n")
+      cat("  Wet:", wet_count, "| Dry:", dry_count, "\n")
       
     }, error = function(e) {
-      cat("Failed:", file_name, "-", e$message, "\n")
+      cat("✗ Failed:", file_name, "-", e$message, "\n")
     })
   }
   
