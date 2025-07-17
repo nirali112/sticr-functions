@@ -1,30 +1,25 @@
 faasr_calibrate_stic <- function() {
-  # Step 2: STICr Calibration Function
+  # Step 2: STICr Calibration Function - Dynamic Version
   # Input: step1-tidy/*.csv (from Step 1)
   # Output: step2-calibrated/*.csv
   
   library(tidyverse)
   library(lubridate)
   library(STICr)
-  cat("Libraries loaded \n")
+  cat("Libraries loaded for Step 2: Calibration\n")
   
-  # Step 2: Simple pattern generation based on Step 1 outputs
+  # Use FaaSr's built-in folder listing for Step 1 outputs
+  folder_contents <- faasr_get_folder_list(faasr_prefix = "sticr-workflow/step1-tidy")
+  cat("Found", length(folder_contents), "objects in step1-tidy folder\n")
   
-  # Generate patterns for Step 1 outputs: [original_name]_step1_tidy.csv
-  # Based on your known file patterns, much more targeted
-  known_bases <- c("02M10", "04W02", "04W03", "04W04", "04T02", "20M01", "SFM01", "SFM07", "SFT01", "04SW3")
-  types <- c("LS", "HS", "SP", "SW")
-  years <- c("2021", "2022", "2023", "2024")
+  # Convert list to character vector and filter for CSV files
+  all_step1_files <- unlist(folder_contents)
+  potential_step1_files <- all_step1_files[grepl("\\.csv$", all_step1_files, ignore.case = TRUE)]
+  cat("Filtered to", length(potential_step1_files), "Step 1 output files\n")
   
-  # Generate targeted step1 output patterns
-  step1_patterns <- expand.grid(base = known_bases, type = types, year = years)
-  stic_step1_files <- paste0("STIC_GP_KNZ_", step1_patterns$base, "_", step1_patterns$type, "_", step1_patterns$year, "_step1_tidy.csv")
-  
-  # Add raw file step1 outputs
-  raw_step1_files <- c("raw_hobo_data_step1_tidy.csv", "hobo_raw_step1_tidy.csv", "raw_stic_data_step1_tidy.csv")
-  
-  potential_step1_files <- c(stic_step1_files, raw_step1_files)
-  cat("Generated", length(potential_step1_files), "targeted Step 1 output patterns\n")
+  # Remove the folder prefix from filenames for processing
+  potential_step1_files <- gsub("^sticr-workflow/step1-tidy/", "", potential_step1_files)
+  cat("Processing Step 1 outputs:", paste(potential_step1_files, collapse = ", "), "\n")
   
   # Find available Step 1 files and check if already processed
   available_step1_files <- c()
@@ -147,7 +142,7 @@ faasr_calibrate_stic <- function() {
       cat("✓ Calibrated:", clean_filename, "->", nrow(output_data), "rows\n")
       
     }, error = function(e) {
-      cat("Failed:", file_name, "-", e$message, "\n")
+      cat("✗ Failed:", file_name, "-", e$message, "\n")
     })
   }
   
