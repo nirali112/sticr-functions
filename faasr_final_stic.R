@@ -1,5 +1,5 @@
 faasr_final_stic <- function() {
-  # Step 4: Final STIC Output Function
+  # Step 4: Final STIC Output Function - Dynamic Version
   # Input: step3-classified/*.csv (from Step 3)
   # Output: step4-final/*.csv (analysis-ready data)
   
@@ -8,24 +8,18 @@ faasr_final_stic <- function() {
   library(STICr)
   cat("Libraries loaded for Step 4: Final Output\n")
   
-  # Step 4: Simple pattern generation based on Step 3 outputs
-  # Only needs to check what Step 3 actually produced
+  # Use FaaSr's built-in folder listing for Step 3 outputs
+  folder_contents <- faasr_get_folder_list(faasr_prefix = "sticr-workflow/step3-classified")
+  cat("Found", length(folder_contents), "objects in step3-classified folder\n")
   
-  # Generate patterns for Step 3 outputs: [original_name]_step3_classified.csv
-  # Based on your known file patterns - much more targeted
-  known_bases <- c("02M10", "04W02", "04W03", "04W04", "04T02", "20M01", "SFM01", "SFM07", "SFT01", "04SW3")
-  types <- c("LS", "HS", "SP", "SW")
-  years <- c("2021", "2022", "2023", "2024")
+  # Convert list to character vector and filter for CSV files
+  all_step3_files <- unlist(folder_contents)
+  potential_step3_files <- all_step3_files[grepl("\\.csv$", all_step3_files, ignore.case = TRUE)]
+  cat("Filtered to", length(potential_step3_files), "Step 3 output files\n")
   
-  # Generate targeted step3 output patterns (~160 patterns - very fast!)
-  step3_patterns <- expand.grid(base = known_bases, type = types, year = years)
-  stic_step3_files <- paste0("STIC_GP_KNZ_", step3_patterns$base, "_", step3_patterns$type, "_", step3_patterns$year, "_step3_classified.csv")
-  
-  # Add raw file step3 outputs
-  raw_step3_files <- c("raw_hobo_data_step3_classified.csv", "hobo_raw_step3_classified.csv", "raw_stic_data_step3_classified.csv")
-  
-  potential_step3_files <- c(stic_step3_files, raw_step3_files)
-  cat("Generated", length(potential_step3_files), "targeted Step 3 output patterns\n")
+  # Remove the folder prefix from filenames for processing
+  potential_step3_files <- gsub("^sticr-workflow/step3-classified/", "", potential_step3_files)
+  cat("Processing Step 3 outputs:", paste(potential_step3_files, collapse = ", "), "\n")
   
   # Find available Step 3 files and check if already processed
   available_step3_files <- c()
@@ -156,14 +150,14 @@ faasr_final_stic <- function() {
         format(max(final_data$datetime), "%Y-%m-%d")
       )
       
-      cat(" Final dataset:", clean_filename, "->", nrow(final_data), "rows\n")
-      cat(" Date range:", date_range, "\n")
-      cat(" Wet:", wet_count, "(", wet_percentage, "%) | Dry:", dry_count, "\n")
-      cat(" SpC range:", round(min(final_data$SpC, na.rm = TRUE), 1), "-", 
+      cat("✓ Final dataset:", clean_filename, "->", nrow(final_data), "rows\n")
+      cat("  Date range:", date_range, "\n")
+      cat("  Wet:", wet_count, "(", wet_percentage, "%) | Dry:", dry_count, "\n")
+      cat("  SpC range:", round(min(final_data$SpC, na.rm = TRUE), 1), "-", 
           round(max(final_data$SpC, na.rm = TRUE), 1), "µS/cm\n")
       
     }, error = function(e) {
-      cat("Failed:", file_name, "-", e$message, "\n")
+      cat("✗ Failed:", file_name, "-", e$message, "\n")
     })
   }
   
@@ -173,9 +167,9 @@ faasr_final_stic <- function() {
   cat("Analysis-ready data saved to: sticr-workflow/step4-final/\n")
   
   if(processed_files > 0) {
-    cat("STIC data processing pipeline completed successfully!\n")
+    cat("🎉 STIC data processing pipeline completed successfully!\n")
   } else {
-    cat("All files were already processed - pipeline up to date!\n")
+    cat("✅ All files were already processed - pipeline up to date!\n")
   }
   
   return(paste("STICr workflow completed:", processed_files, "new analysis-ready datasets created,", 
